@@ -86,6 +86,9 @@ func (a *App) stripGlobalFlags(args []string) (FlagValues, []string, error) {
 	if err := applyEnvValues(a.globalFlags, values); err != nil {
 		return FlagValues{}, nil, err
 	}
+	if err := validateFlagValues(a.globalFlags, values); err != nil {
+		return FlagValues{}, nil, err
+	}
 	for _, f := range a.globalFlags {
 		if f.required && !values[f.Name].present {
 			return FlagValues{}, nil, errx.NewCodef(CodeMissingRequiredFlag, "缺少必填全局 flag %q", f.Name)

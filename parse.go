@@ -256,7 +256,22 @@ func validateFlagSpecs(flags []FlagSpec) error {
 			if f.kind == KindEnum && !enumAllowed(f.Allowed, fmt.Sprint(f.defaultVal)) {
 				return errx.NewCodef(CodeInvalidFlagDef, "枚举 flag %q 的默认值 %q 不在允许列表", name, f.defaultVal)
 			}
+			if f.validate != "" {
+				if err := validateDefaultAgainstRules(f); err != nil {
+					return err
+				}
+			}
 		}
+	}
+	return nil
+}
+
+// validateDefaultAgainstRules 在注册期校验默认值是否满足 validx 规则。
+func validateDefaultAgainstRules(f FlagSpec) error {
+	validator, _ := validx.New()
+	if err := validator.ValidateField(f.defaultVal, f.validate); err != nil {
+		return errx.WrapCodef(err, CodeInvalidFlagDef,
+			"flag %q 的默认值未通过校验规则", f.Name)
 	}
 	return nil
 }

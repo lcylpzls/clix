@@ -78,6 +78,29 @@ func TestValidateRulesZeroValueAllowed(t *testing.T) {
 	}
 }
 
+func TestValidateDefaultValue(t *testing.T) {
+	app := newTestApp(t)
+	err := app.AddCommand(&Command{
+		Name:  "bad",
+		Flags: []FlagSpec{StringFlag("mode", "").Default("staging").Validate("oneof=dev prod")},
+		Action: func(ctx context.Context, c *Context) error {
+			return nil
+		},
+	})
+	assertErrCode(t, err, CodeInvalidFlagDef)
+
+	app2 := newTestApp(t)
+	if err := app2.AddCommand(&Command{
+		Name:  "good",
+		Flags: []FlagSpec{StringFlag("mode", "").Default("dev").Validate("oneof=dev prod")},
+		Action: func(ctx context.Context, c *Context) error {
+			return nil
+		},
+	}); err != nil {
+		t.Fatalf("合法默认值应通过：%v", err)
+	}
+}
+
 func TestZeroValueForKindAll(t *testing.T) {
 	flags := []FlagSpec{
 		BoolFlag("b", "").Validate("required"),

@@ -163,6 +163,29 @@ func TestGlobalFlagEnvInvalid(t *testing.T) {
 	}
 }
 
+func TestGlobalFlagValidation(t *testing.T) {
+	var errBuf bytes.Buffer
+	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),
+		WithGlobalFlags(StringFlag("mode", "模式").Validate("oneof=dev prod")))
+	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
+	if code := app.Execute(context.Background(), []string{"--mode", "staging", "hello"}); code != ExitUsage {
+		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
+	}
+	if !strings.Contains(errBuf.String(), "CLI_FLAG_VALIDATION_FAILED") {
+		t.Fatalf("校验错误缺失：%s", errBuf.String())
+	}
+}
+
+func TestGlobalFlagValidationPass(t *testing.T) {
+	var out bytes.Buffer
+	app, _ := New("greet", "0.1.0", WithIO(&out, &bytes.Buffer{}),
+		WithGlobalFlags(StringFlag("mode", "模式").Validate("oneof=dev prod")))
+	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
+	if code := app.Execute(context.Background(), []string{"--mode", "dev", "hello"}); code != ExitOK {
+		t.Fatalf("期望退出码 0，得到 %d", code)
+	}
+}
+
 func TestRequiredGlobalFlag(t *testing.T) {
 	var errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),

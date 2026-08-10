@@ -81,8 +81,8 @@ func (f FlagSpec) Validate(rules string) FlagSpec
 使用逗号分隔并去除空白。环境变量同样满足必填校验。
 
 `Validate` 绑定 validx 规则串（如 `required,min=3`、`oneof=dev prod`）；
-规则语法在注册期预编译，值未通过校验时返回
-`CLI_FLAG_VALIDATION_FAILED`（退出码 2）。
+规则语法与默认值在注册期预编译校验，解析期逐值校验；失败返回
+`CLI_FLAG_VALIDATION_FAILED`（退出码 2）。全局 flag 同样参与校验。
 
 ### Context 访问器
 

@@ -193,10 +193,7 @@ func flagHelpDesc(f FlagSpec) string {
 	}
 	desc := f.Usage
 	if len(marks) > 0 {
-		if desc != "" {
-			desc += "；"
-		}
-		desc += strings.Join(marks, "；")
+		desc += "（" + strings.Join(marks, "；") + "）"
 	}
 	return desc
 }
