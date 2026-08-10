@@ -1,8 +1,8 @@
 # API 快照
 
-> 随版本更新。v0.5.0 快照如下；新版本发布后同步替换。
+> 随版本更新。v0.6.2 快照如下；v1.0.0 发布后成为冻结快照。
 
-## v0.5.0
+## v0.6.2
 
 ### 类型
 
@@ -132,6 +132,13 @@ func LoadConfig(ctx context.Context, c *Context, manager *confx.ConfigManager,
   （默认 `config`）的值，其次使用 `fallback`；
 - 加载错误透传 confx 结构化错误。
 
+### 依赖约定（v1.0.0 起冻结）
+
+- `errx` / `logx` / `validx` 跟随家族 1.x 版本；
+- `confx` 当前锁定 `v0.3.3`：`LoadConfig` 仅依赖其稳定子集
+  （`NewConfigManager` / `Load`），confx 发布 1.0 后统一评审升级；
+- 冻结后破坏性 API 变更需提升主版本。
+
 ### 错误提示与日志级别
 
 ```go
@@ -181,7 +188,9 @@ func (a *App) CommandHelpText(name string) (string, error)
 
 - 命令列表按 `Group` 分组（空分组无标题），组内保持注册顺序；
 - 命令帮助展示别名、子命令、参数与选项；
-- `help parent child` 支持完整路径。
+- `help parent child` 支持完整路径；
+- `CommandHelpText(name)` 仅接受**顶层命令名**；完整路径帮助请使用
+  `help 路径` 子命令或 `Run` / `Execute`。
 
 ### 访问器
 

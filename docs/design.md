@@ -87,5 +87,7 @@ Execute(ctx, args)
 
 - 语义化版本；pre-1.0 允许按路线图演进 API；
 - 每个里程碑版本完成即发布 tag，CI 全绿后由 Release 工作流生成 Release；
+- v1.0.0 起 API 冻结，破坏性变更必须提升主版本；
+- 依赖约定：`errx` / `logx` / `validx` 跟随 1.x；`confx` 锁定 `v0.3.3`
+  （`LoadConfig` 仅使用其稳定子集），confx 发布 1.0 后评审升级；
 - v1.0.0 是否发布由维护者决定，clix 只推进到 1.0 候选即停。
-
