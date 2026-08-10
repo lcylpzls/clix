@@ -1,6 +1,7 @@
 package clix
 
 import (
+	testx "github.com/lcylpzls/testx"
 	"strings"
 	"testing"
 	"time"
@@ -23,9 +24,8 @@ func TestFlagEnvPrecedence(t *testing.T) {
 		DurationFlag("timeout", "").Env("CLIX_TEST_TIMEOUT"),
 	}
 	_, fv, err := parseCommandArgs(nil, flags, []string{"--output", "命令行"})
-	if err != nil {
-		t.Fatalf("解析失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	if ctx.String("output") != "命令行" {
 		t.Fatalf("命令行应覆盖环境变量：%q", ctx.String("output"))
@@ -52,9 +52,8 @@ func TestFlagEnvSatisfiesRequired(t *testing.T) {
 	_, fv, err := parseCommandArgs(nil, []FlagSpec{
 		StringFlag("required", "").Required().Env("CLIX_TEST_REQUIRED"),
 	}, nil)
-	if err != nil {
-		t.Fatalf("必填 flag 应由环境变量满足：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	if !ctx.HasFlag("required") {
 		t.Fatal("环境变量提供的值应视为已设置")
@@ -79,9 +78,8 @@ func TestFlagEnvMissing(t *testing.T) {
 	_, fv, err := parseCommandArgs(nil, []FlagSpec{
 		StringFlag("output", "").Env("CLIX_TEST_NOT_SET").Default("默认值"),
 	}, nil)
-	if err != nil {
-		t.Fatalf("解析失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	if ctx.String("output") != "默认值" {
 		t.Fatalf("环境变量未设置时应使用默认值：%q", ctx.String("output"))

@@ -3,6 +3,7 @@ package clix
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"strings"
 	"testing"
 	"time"
@@ -102,15 +103,13 @@ func TestParseCommandArgsSuccess(t *testing.T) {
 		"--tag", "a", "--tag=b", "--size=8", "--ratio", "0.5",
 		"--timeout", "2s", "--output=build.log",
 	})
-	if err != nil {
-		t.Fatalf("期望解析成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if len(positional) != 3 || positional[0] != "alice" || positional[1] != "x" || positional[2] != "y" {
 		t.Fatalf("位置参数不匹配：%v", positional)
 	}
-	if fv.values["output"].str != "build.log" {
-		t.Fatalf("output 应覆盖默认值：%v", fv.values["output"])
-	}
+	testx.RequireEqual(t, fv.values["output"].str, "build.log")
+
 	if !fv.values["verbose"].present || !fv.values["verbose"].b {
 		t.Fatal("verbose 应被置为 true")
 	}
@@ -126,9 +125,8 @@ func TestParseCommandArgsSuccess(t *testing.T) {
 	if fv.values["timeout"].dur != 2*time.Second {
 		t.Fatalf("timeout 应为 2s：%v", fv.values["timeout"])
 	}
-	if fv.values["mode"].str != "slow" {
-		t.Fatalf("mode 应为 slow：%v", fv.values["mode"])
-	}
+	testx.RequireEqual(t, fv.values["mode"].str, "slow")
+
 	if got := strings.Join(fv.values["tag"].strs, ","); got != "a,b" {
 		t.Fatalf("tag 应为 [a b]：%q", got)
 	}
@@ -139,9 +137,8 @@ func TestParseCommandArgsSuccess(t *testing.T) {
 
 func TestParseCommandArgsBoolFalse(t *testing.T) {
 	_, fv, err := parseCommandArgs(nil, []FlagSpec{BoolFlag("v", "")}, []string{"--v=false"})
-	if err != nil {
-		t.Fatalf("期望解析成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if !fv.values["v"].present || fv.values["v"].b {
 		t.Fatalf("v 应为 false 且 present：%v", fv.values["v"])
 	}
@@ -149,9 +146,8 @@ func TestParseCommandArgsBoolFalse(t *testing.T) {
 
 func TestParseCommandArgsTerminator(t *testing.T) {
 	positional, fv, err := parseCommandArgs(nil, []FlagSpec{StringFlag("a", "")}, []string{"--", "--a", "x"})
-	if err != nil {
-		t.Fatalf("期望解析成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if len(positional) != 2 || positional[0] != "--a" || positional[1] != "x" {
 		t.Fatalf("终止符后的内容应作为位置参数：%v", positional)
 	}
@@ -208,9 +204,8 @@ func TestContextFlagAccessors(t *testing.T) {
 		StringSliceFlag("sl", "").Default([]string{"a"}),
 	}
 	_, fv, err := parseCommandArgs(nil, flags, []string{"--sl", "b", "--s=显式"})
-	if err != nil {
-		t.Fatalf("解析失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	if !ctx.HasFlag("s") {
 		t.Fatal("s 应标记为显式指定")
@@ -273,9 +268,8 @@ func TestStringsReturnsCopy(t *testing.T) {
 	_, fv, err := parseCommandArgs(nil, []FlagSpec{
 		StringSliceFlag("sl", "").Default([]string{"a"}),
 	}, []string{"--sl", "b"})
-	if err != nil {
-		t.Fatalf("解析失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	got := ctx.Strings("sl")
 	got[0] = "改坏"
@@ -331,13 +325,11 @@ func TestCommandHelpTextWithArgsAndFlags(t *testing.T) {
 		},
 		Action: okAction,
 	})
-	if err != nil {
-		t.Fatalf("注册失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	text, err := app.CommandHelpText("build")
-	if err != nil {
-		t.Fatalf("期望成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	for _, want := range []string{
 		"greet build [选项...] [参数...]",
 		"参数:",

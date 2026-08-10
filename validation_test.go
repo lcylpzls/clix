@@ -3,6 +3,7 @@ package clix
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"strings"
 	"testing"
 )
@@ -13,9 +14,8 @@ func TestFlagValidateSuccess(t *testing.T) {
 		IntFlag("retry", "").Validate("gte=0,lte=10").Default(3),
 	}
 	_, fv, err := parseCommandArgs(nil, flags, []string{"--name", "小明"})
-	if err != nil {
-		t.Fatalf("期望校验通过，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	if ctx.String("name") != "小明" || ctx.Int("retry") != 3 {
 		t.Fatalf("flag 值不匹配：%q/%d", ctx.String("name"), ctx.Int("retry"))
@@ -127,9 +127,8 @@ func TestFlagValidateAllKinds(t *testing.T) {
 	_, fv, err := parseCommandArgs(nil, flags, []string{
 		"--b=true", "--i", "3", "--i64", "4", "--f", "2.0", "--d", "3s",
 	})
-	if err != nil {
-		t.Fatalf("期望全部类型校验通过，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Flags: fv}
 	if !ctx.Bool("b") || ctx.Int("i") != 3 || ctx.Int64("i64") != 4 ||
 		ctx.Float64("f") != 2.0 || ctx.Duration("d").String() != "3s" {
@@ -147,9 +146,8 @@ func TestFlagValidateHelp(t *testing.T) {
 		},
 	})
 	text, err := app.CommandHelpText("hello")
-	if err != nil {
-		t.Fatalf("期望成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if !strings.Contains(text, "校验 required") {
 		t.Fatalf("帮助缺少校验规则：\n%s", text)
 	}

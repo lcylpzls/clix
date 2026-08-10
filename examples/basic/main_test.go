@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,9 +15,8 @@ import (
 func TestGreetCLI(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	app, err := newApp(&out, &errBuf)
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"hello", "小明"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -31,9 +31,8 @@ func TestGreetCLI(t *testing.T) {
 func TestGreetCLIHelp(t *testing.T) {
 	var out bytes.Buffer
 	app, err := newApp(&out, &bytes.Buffer{})
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"--help"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -45,9 +44,8 @@ func TestGreetCLIHelp(t *testing.T) {
 func TestGreetCLIUsageError(t *testing.T) {
 	var errBuf bytes.Buffer
 	app, err := newApp(&bytes.Buffer{}, &errBuf)
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"nope"}); code != clix.ExitUsage {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
 	}
@@ -59,9 +57,8 @@ func TestGreetCLIUsageError(t *testing.T) {
 func TestGreetCLISum(t *testing.T) {
 	var out bytes.Buffer
 	app, err := newApp(&out, &bytes.Buffer{})
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"sum", "1", "2", "3", "--base", "10"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -73,9 +70,8 @@ func TestGreetCLISum(t *testing.T) {
 func TestGreetCLISumAverage(t *testing.T) {
 	var out bytes.Buffer
 	app, err := newApp(&out, &bytes.Buffer{})
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"sum", "2", "4", "6", "--mode", "average"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -87,9 +83,8 @@ func TestGreetCLISumAverage(t *testing.T) {
 func TestGreetCLISumUsageError(t *testing.T) {
 	var errBuf bytes.Buffer
 	app, err := newApp(&bytes.Buffer{}, &errBuf)
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"sum", "1", "--mode", "slow"}); code != clix.ExitUsage {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
 	}
@@ -101,9 +96,8 @@ func TestGreetCLISumUsageError(t *testing.T) {
 func TestGreetCLINestedRemote(t *testing.T) {
 	var out bytes.Buffer
 	app, err := newApp(&out, &bytes.Buffer{})
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"remote", "ls"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -115,9 +109,8 @@ func TestGreetCLINestedRemote(t *testing.T) {
 func TestGreetCLINestedRemoteMissingSubcommand(t *testing.T) {
 	var errBuf bytes.Buffer
 	app, err := newApp(&bytes.Buffer{}, &errBuf)
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"remote"}); code != clix.ExitUsage {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
 	}
@@ -129,9 +122,8 @@ func TestGreetCLINestedRemoteMissingSubcommand(t *testing.T) {
 func TestGreetCLIGlobalFlag(t *testing.T) {
 	var out bytes.Buffer
 	app, err := newApp(&out, &bytes.Buffer{})
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"--verbose", "hello", "小明"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -148,9 +140,8 @@ func TestGreetCLIConfig(t *testing.T) {
 	}
 	var out bytes.Buffer
 	app, err := newApp(&out, &bytes.Buffer{})
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"config", "--path", path, "--mode", "prod"}); code != clix.ExitOK {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
 	}
@@ -162,9 +153,8 @@ func TestGreetCLIConfig(t *testing.T) {
 func TestGreetCLIConfigValidation(t *testing.T) {
 	var errBuf bytes.Buffer
 	app, err := newApp(&bytes.Buffer{}, &errBuf)
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if code := app.Execute(context.Background(), []string{"config", "--mode", "staging"}); code != clix.ExitUsage {
 		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
 	}

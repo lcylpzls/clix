@@ -3,6 +3,7 @@ package clix
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"os"
 	"strings"
 	"sync"
@@ -16,9 +17,8 @@ func TestNewValidation(t *testing.T) {
 	t.Run("空应用名", func(t *testing.T) {
 		app, err := New("", "0.1.0")
 		assertErrCode(t, err, CodeInvalidApp)
-		if app != nil {
-			t.Fatalf("期望 app 为 nil，得到 %v", app)
-		}
+		testx.RequireNil(t, app)
+
 	})
 	t.Run("空白应用名", func(t *testing.T) {
 		_, err := New("   ", "0.1.0")
@@ -38,9 +38,8 @@ func TestNewValidation(t *testing.T) {
 	})
 	t.Run("nil 选项安全跳过", func(t *testing.T) {
 		app, err := New("greet", "0.1.0", nil)
-		if err != nil {
-			t.Fatalf("期望成功，得到 %v", err)
-		}
+		testx.RequireNoError(t, err)
+
 		if app.Name() != "greet" {
 			t.Fatalf("期望名称 greet，得到 %s", app.Name())
 		}
@@ -57,9 +56,8 @@ func TestNewDefaultsAndAccessors(t *testing.T) {
 		WithLogger(logger),
 		WithRootAction(func(ctx context.Context, c *Context) error { return nil }),
 	)
-	if err != nil {
-		t.Fatalf("期望成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if got := app.Name(); got != "greet" {
 		t.Fatalf("名称应去除空白，得到 %q", got)
 	}
@@ -82,9 +80,8 @@ func TestNewDefaultsAndAccessors(t *testing.T) {
 
 func TestNewDefaultIO(t *testing.T) {
 	app, err := New("greet", "0.1.0")
-	if err != nil {
-		t.Fatalf("期望成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if app.Out() != os.Stdout {
 		t.Fatal("默认 Out 应为 os.Stdout")
 	}
@@ -225,9 +222,8 @@ func TestCommandHelpText(t *testing.T) {
 		Action:      okAction,
 	})
 	text, err := app.CommandHelpText("hello")
-	if err != nil {
-		t.Fatalf("期望成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if !strings.Contains(text, "用法:\n  greet hello [选项...] [参数...]\n") {
 		t.Fatalf("默认用法缺失：\n%s", text)
 	}
@@ -237,9 +233,8 @@ func TestCommandHelpText(t *testing.T) {
 
 	app.AddCommand(&Command{Name: "quiet", Usage: "quiet 特殊用法", Action: okAction})
 	text, err = app.CommandHelpText("quiet")
-	if err != nil {
-		t.Fatalf("期望成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	if !strings.Contains(text, "quiet 特殊用法") {
 		t.Fatalf("自定义用法缺失：\n%s", text)
 	}
@@ -258,9 +253,8 @@ func TestContextAccessors(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	logger := &fakeLogger{}
 	app, err := New("greet", "0.1.0", WithIO(&out, &errBuf), WithLogger(logger))
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	var gotOut, gotErr any
 	var gotLogger logx.Logger
 	app.AddCommand(&Command{
@@ -281,9 +275,8 @@ func TestContextAccessors(t *testing.T) {
 	if gotErr != &errBuf {
 		t.Fatal("Context.Err 不匹配")
 	}
-	if gotLogger != logger {
-		t.Fatal("Context.Logger 不匹配")
-	}
+	testx.RequireEqual(t, gotLogger, logger)
+
 }
 
 // 测试辅助
@@ -295,17 +288,15 @@ func okAction(ctx context.Context, c *Context) error {
 func newTestApp(t *testing.T) *App {
 	t.Helper()
 	app, err := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}))
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	return app
 }
 
 func assertErrCode(t *testing.T, err error, want errx.Code) {
 	t.Helper()
-	if err == nil {
-		t.Fatalf("期望错误 %q，得到 nil", want)
-	}
+	testx.RequireError(t, err)
+
 	if !errx.Is(err, want) {
 		t.Fatalf("期望错误码 %q，得到 %v", want, err)
 	}

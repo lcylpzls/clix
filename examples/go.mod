@@ -5,6 +5,7 @@ go 1.26.5
 require (
 	github.com/lcylpzls/clix v1.0.0
 	github.com/lcylpzls/confx v0.3.3
+	github.com/lcylpzls/testx v1.2.0
 )
 
 require (

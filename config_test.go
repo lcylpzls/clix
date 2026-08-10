@@ -3,6 +3,7 @@ package clix
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"os"
 	"path/filepath"
 	"strings"
@@ -82,15 +83,13 @@ func TestLoadConfigFlagWinsAndFallback(t *testing.T) {
 	if code := run([]string{"config", "--path", flagPath}); code != ExitOK {
 		t.Fatalf("flag 路径执行失败：%d", code)
 	}
-	if got != "flag" {
-		t.Fatalf("flag 路径应优先：%q", got)
-	}
+	testx.RequireEqual(t, got, "flag")
+
 	if code := run([]string{"config"}); code != ExitOK {
 		t.Fatalf("默认路径执行失败：%d", code)
 	}
-	if got != "fallback" {
-		t.Fatalf("应使用默认路径：%q", got)
-	}
+	testx.RequireEqual(t, got, "fallback")
+
 }
 
 func TestLoadConfigDefaultPathFlag(t *testing.T) {
@@ -117,9 +116,8 @@ func TestLoadConfigDefaultPathFlag(t *testing.T) {
 	if code := app.Execute(context.Background(), []string{"config", "--config", path}); code != ExitOK {
 		t.Fatalf("期望退出码 0，得到 %d", code)
 	}
-	if cfg.Value != "ok" {
-		t.Fatalf("默认 flag 名应生效：%q", cfg.Value)
-	}
+	testx.RequireEqual(t, cfg.Value, "ok")
+
 }
 
 func TestLoadConfigErrors(t *testing.T) {

@@ -3,6 +3,7 @@ package clix
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"strings"
 	"testing"
 )
@@ -30,9 +31,8 @@ func FuzzExecute(f *testing.F) {
 			WithRootAction(func(ctx context.Context, c *Context) error { return nil }),
 			WithGlobalFlags(BoolFlag("verbose", "详细输出")),
 		)
-		if err != nil {
-			t.Fatalf("构造失败：%v", err)
-		}
+		testx.RequireNoError(t, err)
+
 		_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
 		_ = app.AddCommand(&Command{
 			Name: "sum",

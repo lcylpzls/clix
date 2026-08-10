@@ -3,6 +3,7 @@ package clix
 import (
 	"bytes"
 	"context"
+	testx "github.com/lcylpzls/testx"
 	"strings"
 	"testing"
 	"time"
@@ -34,9 +35,8 @@ func TestGlobalFlagsBeforeCommand(t *testing.T) {
 			StringSliceFlag("tag", "标签"),
 		),
 	)
-	if err != nil {
-		t.Fatalf("构造失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	_ = app.AddCommand(&Command{
 		Name: "hello",
 		Action: func(ctx context.Context, c *Context) error {
@@ -59,9 +59,8 @@ func TestGlobalFlagsBeforeCommand(t *testing.T) {
 		"--tag", "a", "--tag=b",
 		"hello", "x", "y",
 	})
-	if code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, code, ExitOK)
+
 	if got.level != "debug" || !got.verbose || got.retry != 7 || got.size != 8 ||
 		got.ratio != 0.5 || got.timeout != 2*time.Second || got.mode != "slow" ||
 		!got.hasLevel {
@@ -258,9 +257,8 @@ func TestGlobalStringsReturnsCopy(t *testing.T) {
 	app, _ := New("greet", "0.1.0",
 		WithGlobalFlags(StringSliceFlag("tag", "")))
 	fv, _, err := app.stripGlobalFlags([]string{"--tag", "a"})
-	if err != nil {
-		t.Fatalf("解析失败：%v", err)
-	}
+	testx.RequireNoError(t, err)
+
 	ctx := &Context{Global: fv}
 	got := ctx.GlobalStrings("tag")
 	got[0] = "改坏"
