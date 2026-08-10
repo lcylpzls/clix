@@ -15,9 +15,7 @@ import (
 func TestLoadConfigSuccess(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "app.toml")
-	if err := os.WriteFile(path, []byte("greeting = \"你好\"\nretries = 3\n"), 0o600); err != nil {
-		t.Fatalf("写配置失败：%v", err)
-	}
+	testx.RequireNoError(t, os.WriteFile(path, []byte("greeting = \"你好\"\nretries = 3\n"), 0o600))
 	var cfg struct {
 		Greeting string `toml:"greeting"`
 		Retries  int    `toml:"retries"`
@@ -39,9 +37,7 @@ func TestLoadConfigSuccess(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"config", "--path", path}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"config", "--path", path}), ExitOK)
 	if !strings.Contains(out.String(), "你好") {
 		t.Fatalf("配置未加载：%s", out.String())
 	}
@@ -54,12 +50,8 @@ func TestLoadConfigFlagWinsAndFallback(t *testing.T) {
 	dir := t.TempDir()
 	flagPath := filepath.Join(dir, "flag.toml")
 	fallbackPath := filepath.Join(dir, "fallback.toml")
-	if err := os.WriteFile(flagPath, []byte("value = \"flag\"\n"), 0o600); err != nil {
-		t.Fatalf("写配置失败：%v", err)
-	}
-	if err := os.WriteFile(fallbackPath, []byte("value = \"fallback\"\n"), 0o600); err != nil {
-		t.Fatalf("写配置失败：%v", err)
-	}
+	testx.RequireNoError(t, os.WriteFile(flagPath, []byte("value = \"flag\"\n"), 0o600))
+	testx.RequireNoError(t, os.WriteFile(fallbackPath, []byte("value = \"fallback\"\n"), 0o600))
 	var got string
 	run := func(args []string) int {
 		var cfg struct {
@@ -80,14 +72,10 @@ func TestLoadConfigFlagWinsAndFallback(t *testing.T) {
 		})
 		return app.Execute(context.Background(), args)
 	}
-	if code := run([]string{"config", "--path", flagPath}); code != ExitOK {
-		t.Fatalf("flag 路径执行失败：%d", code)
-	}
+	testx.RequireEqual(t, run([]string{"config", "--path", flagPath}), ExitOK)
 	testx.RequireEqual(t, got, "flag")
 
-	if code := run([]string{"config"}); code != ExitOK {
-		t.Fatalf("默认路径执行失败：%d", code)
-	}
+	testx.RequireEqual(t, run([]string{"config"}), ExitOK)
 	testx.RequireEqual(t, got, "fallback")
 
 }
@@ -95,9 +83,7 @@ func TestLoadConfigFlagWinsAndFallback(t *testing.T) {
 func TestLoadConfigDefaultPathFlag(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "app.toml")
-	if err := os.WriteFile(path, []byte("value = \"ok\"\n"), 0o600); err != nil {
-		t.Fatalf("写配置失败：%v", err)
-	}
+	testx.RequireNoError(t, os.WriteFile(path, []byte("value = \"ok\"\n"), 0o600))
 	var cfg struct {
 		Value string `toml:"value"`
 	}
@@ -113,9 +99,7 @@ func TestLoadConfigDefaultPathFlag(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"config", "--config", path}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"config", "--config", path}), ExitOK)
 	testx.RequireEqual(t, cfg.Value, "ok")
 
 }
@@ -133,9 +117,7 @@ func TestLoadConfigErrors(t *testing.T) {
 			},
 			Action: okAction,
 		})
-		if code := app.Execute(context.Background(), []string{"config"}); code != ExitUsage {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"config"}), ExitUsage)
 		if !strings.Contains(errBuf.String(), "缺少配置文件路径") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -152,9 +134,7 @@ func TestLoadConfigErrors(t *testing.T) {
 			},
 			Action: okAction,
 		})
-		if code := app.Execute(context.Background(), []string{"config", "--path", filepath.Join(t.TempDir(), "nope.toml")}); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"config", "--path", filepath.Join(t.TempDir(), "nope.toml")}), ExitFailure)
 		if !strings.Contains(errBuf.String(), "读取配置文件失败") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}

@@ -50,9 +50,7 @@ func TestFlagValidateExecuteExitUsage(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"hello", "--name", "a"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello", "--name", "a"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "CLI_FLAG_VALIDATION_FAILED") {
 		t.Fatalf("错误码缺失：%s", errBuf.String())
 	}
@@ -73,9 +71,7 @@ func TestValidateRulesSyntaxInvalid(t *testing.T) {
 func TestValidateRulesZeroValueAllowed(t *testing.T) {
 	// 规则合法但零值不通过（required）：注册期应通过，解析期按实际值校验。
 	flags := []FlagSpec{StringFlag("name", "").Validate("required")}
-	if err := validateFlagSpecs(flags); err != nil {
-		t.Fatalf("注册期不应报错：%v", err)
-	}
+	testx.RequireNoError(t, validateFlagSpecs(flags))
 }
 
 func TestValidateDefaultValue(t *testing.T) {
@@ -90,15 +86,13 @@ func TestValidateDefaultValue(t *testing.T) {
 	assertErrCode(t, err, CodeInvalidFlagDef)
 
 	app2 := newTestApp(t)
-	if err := app2.AddCommand(&Command{
+	testx.RequireNoError(t, app2.AddCommand(&Command{
 		Name:  "good",
 		Flags: []FlagSpec{StringFlag("mode", "").Default("dev").Validate("oneof=dev prod")},
 		Action: func(ctx context.Context, c *Context) error {
 			return nil
 		},
-	}); err != nil {
-		t.Fatalf("合法默认值应通过：%v", err)
-	}
+	}))
 }
 
 func TestZeroValueForKindAll(t *testing.T) {
@@ -111,9 +105,7 @@ func TestZeroValueForKindAll(t *testing.T) {
 		StringSliceFlag("sl", "").Validate("required"),
 		StringFlag("s", "").Validate("max=5"),
 	}
-	if err := validateFlagSpecs(flags); err != nil {
-		t.Fatalf("全部类型的零值预编译应通过：%v", err)
-	}
+	testx.RequireNoError(t, validateFlagSpecs(flags))
 }
 
 func TestFlagValidateAllKinds(t *testing.T) {
@@ -148,7 +140,5 @@ func TestFlagValidateHelp(t *testing.T) {
 	text, err := app.CommandHelpText("hello")
 	testx.RequireNoError(t, err)
 
-	if !strings.Contains(text, "校验 required") {
-		t.Fatalf("帮助缺少校验规则：\n%s", text)
-	}
+	testx.RequireTrue(t, strings.Contains(text, "校验 required"))
 }

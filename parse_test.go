@@ -50,9 +50,7 @@ func TestValidateFlagSpecsValid(t *testing.T) {
 		EnumFlag("e", "", "fast").Default("fast"),
 		StringSliceFlag("sl", "").Default([]string{"a", "b"}),
 	}
-	if err := validateFlagSpecs(flags); err != nil {
-		t.Fatalf("期望全部合法，得到 %v", err)
-	}
+	testx.RequireNoError(t, validateFlagSpecs(flags))
 }
 
 func TestValidateArgSpecs(t *testing.T) {
@@ -77,9 +75,7 @@ func TestValidateArgSpecsValid(t *testing.T) {
 		{Name: "a", Required: true},
 		{Name: "rest", Variadic: true},
 	}
-	if err := validateArgSpecs(args); err != nil {
-		t.Fatalf("期望全部合法，得到 %v", err)
-	}
+	testx.RequireNoError(t, validateArgSpecs(args))
 }
 
 func TestParseCommandArgsSuccess(t *testing.T) {
@@ -348,9 +344,7 @@ func TestCommandHelpTextWithArgsAndFlags(t *testing.T) {
 		"可选值：fast、slow",
 		"-h, --help",
 	} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("命令帮助缺少 %q：\n%s", want, text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, want))
 	}
 }
 
@@ -366,9 +360,7 @@ func TestExecuteCommandHelpFlag(t *testing.T) {
 					return nil
 				},
 			})
-			if code := app.Execute(context.Background(), []string{"build", flag}); code != ExitOK {
-				t.Fatalf("期望退出码 0，得到 %d", code)
-			}
+			testx.RequireEqual(t, app.Execute(context.Background(), []string{"build", flag}), ExitOK)
 			if !strings.Contains(out.String(), "用法:") {
 				t.Fatalf("命令帮助缺失：%s", out.String())
 			}
@@ -388,9 +380,7 @@ func TestExecuteCommandHelpTerminator(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"echo", "--", "--help"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"echo", "--", "--help"}), ExitOK)
 	if got := out.String(); got != "--help\n" {
 		t.Fatalf("终止符后的 --help 应作为参数：%q", got)
 	}
@@ -428,12 +418,8 @@ func TestExecuteUsageErrorsForParse(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var errBuf bytes.Buffer
 			app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf))
-			if err := app.AddCommand(tt.cmd); err != nil {
-				t.Fatalf("注册失败：%v", err)
-			}
-			if code := app.Execute(context.Background(), tt.args); code != ExitUsage {
-				t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-			}
+			testx.RequireNoError(t, app.AddCommand(tt.cmd))
+			testx.RequireEqual(t, app.Execute(context.Background(), tt.args), ExitUsage)
 			if !strings.Contains(errBuf.String(), tt.want) {
 				t.Fatalf("错误信息缺少 %q：%s", tt.want, errBuf.String())
 			}

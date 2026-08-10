@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lcylpzls/errx"
+	"github.com/lcylpzls/testx"
 )
 
 func TestNestedCommands(t *testing.T) {
@@ -29,19 +30,11 @@ func TestNestedCommands(t *testing.T) {
 			return nil
 		},
 	}
-	if err := parent.AddCommand(zh); err != nil {
-		t.Fatalf("注册子命令失败：%v", err)
-	}
-	if err := parent.AddCommand(en); err != nil {
-		t.Fatalf("注册子命令失败：%v", err)
-	}
-	if err := app.AddCommand(parent); err != nil {
-		t.Fatalf("注册父命令失败：%v", err)
-	}
+	testx.RequireNoError(t, parent.AddCommand(zh))
+	testx.RequireNoError(t, parent.AddCommand(en))
+	testx.RequireNoError(t, app.AddCommand(parent))
 
-	if code := app.Execute(context.Background(), []string{"parent", "zh", "a", "b"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent", "zh", "a", "b"}), ExitOK)
 	if !strings.Contains(out.String(), "中文执行:a,b") {
 		t.Fatalf("子命令输出缺失：%s", out.String())
 	}
@@ -68,20 +61,12 @@ func TestNestedCommandAliases(t *testing.T) {
 			return nil
 		},
 	}
-	if err := parent.AddCommand(zh); err != nil {
-		t.Fatalf("注册失败：%v", err)
-	}
-	if err := app.AddCommand(parent); err != nil {
-		t.Fatalf("注册失败：%v", err)
-	}
+	testx.RequireNoError(t, parent.AddCommand(zh))
+	testx.RequireNoError(t, app.AddCommand(parent))
 	for _, path := range [][]string{{"parent", "cn"}, {"parent", "zhs"}} {
 		out.Reset()
-		if code := app.Execute(context.Background(), path); code != ExitOK {
-			t.Fatalf("路径 %v 期望退出码 0，得到 %d", path, code)
-		}
-		if !strings.Contains(out.String(), "别名命中") {
-			t.Fatalf("路径 %v 未命中别名", path)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), path), ExitOK)
+		testx.RequireTrue(t, strings.Contains(out.String(), "别名命中"))
 	}
 }
 
@@ -102,22 +87,14 @@ func TestCommandWithActionAndSubcommands(t *testing.T) {
 			return nil
 		},
 	}
-	if err := parent.AddCommand(child); err != nil {
-		t.Fatalf("注册失败：%v", err)
-	}
-	if err := app.AddCommand(parent); err != nil {
-		t.Fatalf("注册失败：%v", err)
-	}
-	if code := app.Execute(context.Background(), []string{"parent"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireNoError(t, parent.AddCommand(child))
+	testx.RequireNoError(t, app.AddCommand(parent))
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent"}), ExitOK)
 	if !strings.Contains(out.String(), "父命令执行") {
 		t.Fatalf("父命令未执行：%s", out.String())
 	}
 	out.Reset()
-	if code := app.Execute(context.Background(), []string{"parent", "child"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent", "child"}), ExitOK)
 	if !strings.Contains(out.String(), "子命令执行") {
 		t.Fatalf("子命令未执行：%s", out.String())
 	}
@@ -130,9 +107,7 @@ func TestNestedCommandErrors(t *testing.T) {
 		parent := &Command{Name: "parent"}
 		_ = parent.AddCommand(&Command{Name: "child", Action: okAction})
 		_ = app.AddCommand(parent)
-		if code := app.Execute(context.Background(), []string{"parent"}); code != ExitUsage {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent"}), ExitUsage)
 		if !strings.Contains(errBuf.String(), "需要子命令") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -143,9 +118,7 @@ func TestNestedCommandErrors(t *testing.T) {
 		parent := &Command{Name: "parent"}
 		_ = parent.AddCommand(&Command{Name: "child", Action: okAction})
 		_ = app.AddCommand(parent)
-		if code := app.Execute(context.Background(), []string{"parent", "nope"}); code != ExitUsage {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent", "nope"}), ExitUsage)
 		if !strings.Contains(errBuf.String(), "未知子命令 \"nope\"") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -158,9 +131,7 @@ func TestNestedCommandErrors(t *testing.T) {
 		_ = child.AddCommand(&Command{Name: "leaf", Action: okAction})
 		_ = parent.AddCommand(child)
 		_ = app.AddCommand(parent)
-		if code := app.Execute(context.Background(), []string{"parent", "child", "nope"}); code != ExitUsage {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent", "child", "nope"}), ExitUsage)
 		if !strings.Contains(errBuf.String(), "未知子命令 \"nope\"（命令 \"parent child\" 下）") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -175,9 +146,7 @@ func TestNestedHelp(t *testing.T) {
 	_ = parent.AddCommand(zh)
 	_ = app.AddCommand(parent)
 
-	if code := app.Execute(context.Background(), []string{"parent", "--help"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"parent", "--help"}), ExitOK)
 	text := out.String()
 	for _, want := range []string{
 		"用法:\n  greet parent [选项...] [参数...]",
@@ -185,15 +154,11 @@ func TestNestedHelp(t *testing.T) {
 		"子命令:",
 		"zh",
 	} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("父命令帮助缺少 %q：\n%s", want, text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, want))
 	}
 
 	out.Reset()
-	if code := app.Execute(context.Background(), []string{"help", "parent", "zh"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"help", "parent", "zh"}), ExitOK)
 	if !strings.Contains(out.String(), "用法:\n  greet parent zh [选项...] [参数...]") {
 		t.Fatalf("子命令帮助缺失：\n%s", out.String())
 	}
@@ -205,9 +170,7 @@ func TestHelpPathUnknown(t *testing.T) {
 	parent := &Command{Name: "parent"}
 	_ = parent.AddCommand(&Command{Name: "child", Action: okAction})
 	_ = app.AddCommand(parent)
-	if code := app.Execute(context.Background(), []string{"help", "parent", "nope"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"help", "parent", "nope"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "未知命令 \"nope\"") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -227,9 +190,7 @@ func TestHelpGroupsAndAliases(t *testing.T) {
 		"sum        求和",
 		"raw        未分组",
 	} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("帮助缺少 %q：\n%s", want, text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, want))
 	}
 }
 

@@ -115,9 +115,7 @@ func TestAddCommandValidation(t *testing.T) {
 
 func TestAddCommandDuplicate(t *testing.T) {
 	app := newTestApp(t)
-	if err := app.AddCommand(&Command{Name: "hello", Action: okAction}); err != nil {
-		t.Fatalf("首次注册失败：%v", err)
-	}
+	testx.RequireNoError(t, app.AddCommand(&Command{Name: "hello", Action: okAction}))
 	err := app.AddCommand(&Command{Name: "hello", Action: okAction})
 	assertErrCode(t, err, CodeInvalidApp)
 }
@@ -146,9 +144,7 @@ func TestAddCommandInvalidDeclarations(t *testing.T) {
 
 func TestAddCommandNormalizesName(t *testing.T) {
 	app := newTestApp(t)
-	if err := app.AddCommand(&Command{Name: "  greet  ", Description: "问候", Action: okAction}); err != nil {
-		t.Fatalf("注册失败：%v", err)
-	}
+	testx.RequireNoError(t, app.AddCommand(&Command{Name: "  greet  ", Description: "问候", Action: okAction}))
 	commands := app.commandList()
 	if len(commands) != 1 || commands[0].Name != "greet" {
 		t.Fatalf("命令名应去除空白，得到 %v", commands)
@@ -159,31 +155,17 @@ func TestHelpTextVariants(t *testing.T) {
 	t.Run("无命令无根 Action", func(t *testing.T) {
 		app, _ := New("greet", "0.1.0")
 		text := app.HelpText()
-		if !strings.Contains(text, "用法:\n  greet\n") {
-			t.Fatalf("缺少默认用法行：\n%s", text)
-		}
-		if !strings.Contains(text, "（无）") {
-			t.Fatalf("应显示无命令：\n%s", text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, "用法:\n  greet\n"))
+		testx.RequireTrue(t, strings.Contains(text, "（无）"))
 	})
 	t.Run("有命令", func(t *testing.T) {
 		app := newTestApp(t)
-		if err := app.AddCommand(&Command{Name: "hello", Description: "问候", Action: okAction}); err != nil {
-			t.Fatalf("注册失败：%v", err)
-		}
-		if err := app.AddCommand(&Command{Name: "sum", Description: "求和", Action: okAction}); err != nil {
-			t.Fatalf("注册失败：%v", err)
-		}
+		testx.RequireNoError(t, app.AddCommand(&Command{Name: "hello", Description: "问候", Action: okAction}))
+		testx.RequireNoError(t, app.AddCommand(&Command{Name: "sum", Description: "求和", Action: okAction}))
 		text := app.HelpText()
-		if !strings.Contains(text, "用法:\n  greet [命令] [参数...]\n") {
-			t.Fatalf("缺少命令用法行：\n%s", text)
-		}
-		if !strings.Contains(text, "hello  问候") {
-			t.Fatalf("命令列表应对齐：\n%s", text)
-		}
-		if !strings.Contains(text, "sum    求和") {
-			t.Fatalf("命令列表应对齐：\n%s", text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, "用法:\n  greet [命令] [参数...]\n"))
+		testx.RequireTrue(t, strings.Contains(text, "hello  问候"))
+		testx.RequireTrue(t, strings.Contains(text, "sum    求和"))
 	})
 	t.Run("根 Action", func(t *testing.T) {
 		app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}),
@@ -199,12 +181,8 @@ func TestHelpTextVariants(t *testing.T) {
 			WithUsage("greet 专用用法"),
 		)
 		text := app.HelpText()
-		if !strings.Contains(text, "greet - 测试描述") {
-			t.Fatalf("描述行缺失：\n%s", text)
-		}
-		if !strings.Contains(text, "greet 专用用法") {
-			t.Fatalf("自定义用法缺失：\n%s", text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, "greet - 测试描述"))
+		testx.RequireTrue(t, strings.Contains(text, "greet 专用用法"))
 	})
 	t.Run("无描述", func(t *testing.T) {
 		app, _ := New("greet", "0.1.0")
@@ -224,20 +202,14 @@ func TestCommandHelpText(t *testing.T) {
 	text, err := app.CommandHelpText("hello")
 	testx.RequireNoError(t, err)
 
-	if !strings.Contains(text, "用法:\n  greet hello [选项...] [参数...]\n") {
-		t.Fatalf("默认用法缺失：\n%s", text)
-	}
-	if !strings.Contains(text, "描述:\n  问候") {
-		t.Fatalf("描述缺失：\n%s", text)
-	}
+	testx.RequireTrue(t, strings.Contains(text, "用法:\n  greet hello [选项...] [参数...]\n"))
+	testx.RequireTrue(t, strings.Contains(text, "描述:\n  问候"))
 
 	app.AddCommand(&Command{Name: "quiet", Usage: "quiet 特殊用法", Action: okAction})
 	text, err = app.CommandHelpText("quiet")
 	testx.RequireNoError(t, err)
 
-	if !strings.Contains(text, "quiet 特殊用法") {
-		t.Fatalf("自定义用法缺失：\n%s", text)
-	}
+	testx.RequireTrue(t, strings.Contains(text, "quiet 特殊用法"))
 	if strings.Contains(text, "描述:") {
 		t.Fatalf("无描述时不应输出描述段：\n%s", text)
 	}
@@ -266,9 +238,7 @@ func TestContextAccessors(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"check"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"check"}), ExitOK)
 	if gotOut != &out {
 		t.Fatal("Context.Out 不匹配")
 	}

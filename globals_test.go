@@ -85,9 +85,7 @@ func TestGlobalFlagsRootAction(t *testing.T) {
 			return nil
 		}),
 	)
-	if code := app.Execute(context.Background(), []string{"--verbose"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--verbose"}), ExitOK)
 	if !strings.Contains(out.String(), "详细模式") {
 		t.Fatalf("根 Action 未读取全局 flag：%s", out.String())
 	}
@@ -106,9 +104,7 @@ func TestGlobalBoolEquals(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"--verbose=false", "hello"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--verbose=false", "hello"}), ExitOK)
 	if out.Len() != 0 {
 		t.Fatalf("--verbose=false 应关闭详细模式：%s", out.String())
 	}
@@ -138,9 +134,7 @@ func TestGlobalFlagErrors(t *testing.T) {
 					StringSliceFlag("tag", ""),
 				))
 			_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-			if code := app.Execute(context.Background(), tt.args); code != ExitUsage {
-				t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-			}
+			testx.RequireEqual(t, app.Execute(context.Background(), tt.args), ExitUsage)
 			if !strings.Contains(errBuf.String(), tt.want) {
 				t.Fatalf("错误信息缺少 %q：%s", tt.want, errBuf.String())
 			}
@@ -154,9 +148,7 @@ func TestGlobalFlagEnvInvalid(t *testing.T) {
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),
 		WithGlobalFlags(IntFlag("n", "").Env("CLIX_G_BAD")))
 	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"hello"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "需要整数") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -167,9 +159,7 @@ func TestGlobalFlagValidation(t *testing.T) {
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),
 		WithGlobalFlags(StringFlag("mode", "模式").Validate("oneof=dev prod")))
 	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"--mode", "staging", "hello"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--mode", "staging", "hello"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "CLI_FLAG_VALIDATION_FAILED") {
 		t.Fatalf("校验错误缺失：%s", errBuf.String())
 	}
@@ -180,9 +170,7 @@ func TestGlobalFlagValidationPass(t *testing.T) {
 	app, _ := New("greet", "0.1.0", WithIO(&out, &bytes.Buffer{}),
 		WithGlobalFlags(StringFlag("mode", "模式").Validate("oneof=dev prod")))
 	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"--mode", "dev", "hello"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--mode", "dev", "hello"}), ExitOK)
 }
 
 func TestRequiredGlobalFlag(t *testing.T) {
@@ -190,9 +178,7 @@ func TestRequiredGlobalFlag(t *testing.T) {
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),
 		WithGlobalFlags(StringFlag("token", "").Required()))
 	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"hello"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "缺少必填全局 flag") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -203,9 +189,7 @@ func TestGlobalFlagAfterCommandIsLocal(t *testing.T) {
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),
 		WithGlobalFlags(BoolFlag("verbose", "详细")))
 	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"hello", "--verbose"}); code != ExitUsage {
-		t.Fatalf("命令后出现未声明的本地 flag 应报用法错误，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello", "--verbose"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "未知 flag") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -215,9 +199,7 @@ func TestGlobalFlagTerminator(t *testing.T) {
 	var errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf),
 		WithGlobalFlags(BoolFlag("verbose", "详细")))
-	if code := app.Execute(context.Background(), []string{"--", "--verbose"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--", "--verbose"}), ExitUsage)
 }
 
 func TestGlobalFlagHelp(t *testing.T) {
@@ -233,9 +215,7 @@ func TestGlobalFlagHelp(t *testing.T) {
 		"环境变量 CLIX_G_LOG",
 		"--verbose bool",
 	} {
-		if !strings.Contains(text, want) {
-			t.Fatalf("帮助缺少 %q：\n%s", want, text)
-		}
+		testx.RequireTrue(t, strings.Contains(text, want))
 	}
 }
 

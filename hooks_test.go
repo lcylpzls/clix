@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/lcylpzls/testx"
 	"strings"
 	"testing"
 )
@@ -26,9 +27,7 @@ func TestBeforeAfterHooksOrder(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitOK)
 	if got := out.String(); got != "before\naction\nafter\n" {
 		t.Fatalf("钩子顺序不匹配：%q", got)
 	}
@@ -52,9 +51,7 @@ func TestBeforeHookErrorAborts(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if out.Len() != 0 {
 		t.Fatalf("Before 失败后不应执行 Action/After：%s", out.String())
 	}
@@ -77,9 +74,7 @@ func TestAfterHookOnActionError(t *testing.T) {
 			return nil
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if !strings.Contains(out.String(), "清理执行") {
 		t.Fatalf("Action 失败后 After 应执行：%s", out.String())
 	}
@@ -98,9 +93,7 @@ func TestAfterHookError(t *testing.T) {
 			return errors.New("清理失败")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if !strings.Contains(errBuf.String(), "清理失败") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -118,9 +111,7 @@ func TestBothHooksFailAggregate(t *testing.T) {
 			return errors.New("清理失败")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if !strings.Contains(errBuf.String(), "动作失败") || !strings.Contains(errBuf.String(), "清理失败") {
 		t.Fatalf("两个错误都应输出：%s", errBuf.String())
 	}
@@ -136,9 +127,7 @@ func TestBeforeHookPanic(t *testing.T) {
 		},
 		Action: okAction,
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if !strings.Contains(errBuf.String(), "CLI_ACTION_PANIC") {
 		t.Fatalf("恐慌错误码缺失：%s", errBuf.String())
 	}
@@ -154,9 +143,7 @@ func TestAfterHookPanic(t *testing.T) {
 			panic("清理崩溃")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if !strings.Contains(errBuf.String(), "CLI_ACTION_PANIC") {
 		t.Fatalf("恐慌错误码缺失：%s", errBuf.String())
 	}

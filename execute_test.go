@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/lcylpzls/errx"
+	"github.com/lcylpzls/testx"
 )
 
 func TestExecuteHelpFlags(t *testing.T) {
@@ -19,9 +20,7 @@ func TestExecuteHelpFlags(t *testing.T) {
 			var out, errBuf bytes.Buffer
 			app2, _ := New("greet", "0.1.0", WithIO(&out, &errBuf))
 			app2.AddCommand(&Command{Name: "hello", Description: "问候", Action: okAction})
-			if code := app2.Execute(context.Background(), []string{flag}); code != ExitOK {
-				t.Fatalf("期望退出码 0，得到 %d", code)
-			}
+			testx.RequireEqual(t, app2.Execute(context.Background(), []string{flag}), ExitOK)
 			if !strings.Contains(out.String(), "命令:") {
 				t.Fatalf("帮助缺失：\n%s", out.String())
 			}
@@ -36,9 +35,7 @@ func TestExecuteHelpCommand(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &errBuf))
 	app.AddCommand(&Command{Name: "hello", Description: "问候", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"help", "hello"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"help", "hello"}), ExitOK)
 	if !strings.Contains(out.String(), "greet hello [选项...] [参数...]") {
 		t.Fatalf("命令帮助缺失：\n%s", out.String())
 	}
@@ -47,9 +44,7 @@ func TestExecuteHelpCommand(t *testing.T) {
 func TestExecuteHelpUnknownCommand(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &errBuf))
-	if code := app.Execute(context.Background(), []string{"help", "nope"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"help", "nope"}), ExitUsage)
 	if out.Len() != 0 {
 		t.Fatalf("帮助失败时 Out 应为空：%s", out.String())
 	}
@@ -61,9 +56,7 @@ func TestExecuteHelpUnknownCommand(t *testing.T) {
 func TestExecuteVersion(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &errBuf))
-	if code := app.Execute(context.Background(), []string{"--version"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--version"}), ExitOK)
 	if got := out.String(); got != "greet 0.1.0\n" {
 		t.Fatalf("版本行不匹配：%q", got)
 	}
@@ -75,9 +68,7 @@ func TestExecuteVersion(t *testing.T) {
 func TestExecuteMissingCommand(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &errBuf))
-	if code := app.Execute(context.Background(), nil); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), nil), ExitUsage)
 	if !strings.Contains(errBuf.String(), "缺少命令") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -89,9 +80,7 @@ func TestExecuteMissingCommand(t *testing.T) {
 func TestExecuteUnknownCommand(t *testing.T) {
 	var out, errBuf bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &errBuf))
-	if code := app.Execute(context.Background(), []string{"nope"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"nope"}), ExitUsage)
 	if !strings.Contains(errBuf.String(), "未知命令 \"nope\"") {
 		t.Fatalf("错误信息缺失：%s", errBuf.String())
 	}
@@ -105,9 +94,7 @@ func TestExecuteRootAction(t *testing.T) {
 				fmt.Fprintln(c.Out(), "根命令输出")
 				return nil
 			}))
-		if code := app.Execute(context.Background(), nil); code != ExitOK {
-			t.Fatalf("期望退出码 0，得到 %d", code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), nil), ExitOK)
 		if !strings.Contains(out.String(), "根命令输出") {
 			t.Fatalf("根命令输出缺失：%s", out.String())
 		}
@@ -118,9 +105,7 @@ func TestExecuteRootAction(t *testing.T) {
 			WithRootAction(func(ctx context.Context, c *Context) error {
 				return errors.New("根命令失败")
 			}))
-		if code := app.Execute(context.Background(), nil); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), nil), ExitFailure)
 		if !strings.Contains(errBuf.String(), "根命令失败") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -132,9 +117,7 @@ func TestExecuteRootAction(t *testing.T) {
 				return errx.NewCode("CLI_TEST_FAIL", "根命令业务失败").
 					WithField("order_id", "10086")
 			}))
-		if code := app.Execute(context.Background(), nil); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), nil), ExitFailure)
 		if !strings.Contains(errBuf.String(), "CLI_TEST_FAIL: 根命令业务失败") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -152,9 +135,7 @@ func TestExecuteCommand(t *testing.T) {
 				return nil
 			},
 		})
-		if code := app.Execute(context.Background(), []string{"hello", "小明", "小红"}); code != ExitOK {
-			t.Fatalf("期望退出码 0，得到 %d", code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello", "小明", "小红"}), ExitOK)
 		if !strings.Contains(out.String(), "你好，小明 小红！") {
 			t.Fatalf("命令输出缺失：%s", out.String())
 		}
@@ -168,9 +149,7 @@ func TestExecuteCommand(t *testing.T) {
 				return errx.NewCode("CLI_TEST_FAIL", "命令执行失败")
 			},
 		})
-		if code := app.Execute(context.Background(), []string{"boom"}); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"boom"}), ExitFailure)
 		if !strings.Contains(errBuf.String(), "命令执行失败") {
 			t.Fatalf("错误信息缺失：%s", errBuf.String())
 		}
@@ -184,9 +163,7 @@ func TestExecuteCommand(t *testing.T) {
 				panic("内部崩溃")
 			},
 		})
-		if code := app.Execute(context.Background(), []string{"panic"}); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"panic"}), ExitFailure)
 		if !strings.Contains(errBuf.String(), "CLI_ACTION_PANIC") {
 			t.Fatalf("恐慌错误码缺失：%s", errBuf.String())
 		}
@@ -201,9 +178,7 @@ func TestExecuteCancelled(t *testing.T) {
 	app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &errBuf))
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if code := app.Execute(ctx, []string{"hello"}); code != ExitCancelled {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitCancelled, code)
-	}
+	testx.RequireEqual(t, app.Execute(ctx, []string{"hello"}), ExitCancelled)
 	if !strings.Contains(errBuf.String(), "CLI_CANCELLED") {
 		t.Fatalf("取消错误码缺失：%s", errBuf.String())
 	}
@@ -213,9 +188,7 @@ func TestExecuteNilContext(t *testing.T) {
 	var out bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &bytes.Buffer{}))
 	var nilCtx context.Context
-	if code := app.Execute(nilCtx, []string{"--version"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(nilCtx, []string{"--version"}), ExitOK)
 	if out.String() != "greet 0.1.0\n" {
 		t.Fatalf("版本行不匹配：%q", out.String())
 	}
@@ -237,9 +210,7 @@ func TestRunReturnsErrorWithoutPrinting(t *testing.T) {
 func TestRunHelpSuccess(t *testing.T) {
 	var out bytes.Buffer
 	app, _ := New("greet", "0.1.0", WithIO(&out, &bytes.Buffer{}))
-	if err := app.Run(context.Background(), []string{"--help"}); err != nil {
-		t.Fatalf("帮助应视为成功，得到 %v", err)
-	}
+	testx.RequireNoError(t, app.Run(context.Background(), []string{"--help"}))
 	if !strings.Contains(out.String(), "命令:") {
 		t.Fatalf("帮助缺失：%s", out.String())
 	}
@@ -250,9 +221,7 @@ func TestExecuteLogging(t *testing.T) {
 		logger := &fakeLogger{}
 		app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}), WithLogger(logger))
 		app.AddCommand(&Command{Name: "hello", Action: okAction})
-		if code := app.Execute(context.Background(), []string{"hello", "a"}); code != ExitOK {
-			t.Fatalf("期望退出码 0，得到 %d", code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello", "a"}), ExitOK)
 		_, infos, _, _ := logger.counts()
 		if infos != 1 {
 			t.Fatalf("期望 1 条 Info 日志，得到 %d", infos)
@@ -261,9 +230,7 @@ func TestExecuteLogging(t *testing.T) {
 	t.Run("用法错误", func(t *testing.T) {
 		logger := &fakeLogger{}
 		app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}), WithLogger(logger))
-		if code := app.Execute(context.Background(), []string{"nope"}); code != ExitUsage {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"nope"}), ExitUsage)
 		_, _, warns, _ := logger.counts()
 		if warns != 1 {
 			t.Fatalf("期望 1 条 Warn 日志，得到 %d", warns)
@@ -278,9 +245,7 @@ func TestExecuteLogging(t *testing.T) {
 				return errors.New("失败")
 			},
 		})
-		if code := app.Execute(context.Background(), []string{"boom"}); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"boom"}), ExitFailure)
 		_, _, _, errorsCount := logger.counts()
 		if errorsCount != 1 {
 			t.Fatalf("期望 1 条 Error 日志，得到 %d", errorsCount)
@@ -291,9 +256,7 @@ func TestExecuteLogging(t *testing.T) {
 		app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}), WithLogger(logger))
 		ctx, cancel := context.WithCancel(context.Background())
 		cancel()
-		if code := app.Execute(ctx, nil); code != ExitCancelled {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitCancelled, code)
-		}
+		testx.RequireEqual(t, app.Execute(ctx, nil), ExitCancelled)
 		_, _, _, errorsCount := logger.counts()
 		if errorsCount != 1 {
 			t.Fatalf("期望 1 条 Error 日志，得到 %d", errorsCount)
@@ -308,9 +271,7 @@ func TestExecuteLogging(t *testing.T) {
 				panic("崩溃")
 			},
 		})
-		if code := app.Execute(context.Background(), []string{"panic"}); code != ExitFailure {
-			t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"panic"}), ExitFailure)
 		_, _, _, errorsCount := logger.counts()
 		if errorsCount != 1 {
 			t.Fatalf("期望 1 条 Error 日志，得到 %d", errorsCount)
@@ -320,9 +281,7 @@ func TestExecuteLogging(t *testing.T) {
 		logger := &fakeLogger{}
 		app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}), WithLogger(logger),
 			WithRootAction(func(ctx context.Context, c *Context) error { return nil }))
-		if code := app.Execute(context.Background(), nil); code != ExitOK {
-			t.Fatalf("期望退出码 0，得到 %d", code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), nil), ExitOK)
 		_, infos, _, _ := logger.counts()
 		if infos != 1 {
 			t.Fatalf("期望 1 条 Info 日志，得到 %d", infos)
@@ -330,9 +289,7 @@ func TestExecuteLogging(t *testing.T) {
 	})
 	t.Run("无日志器", func(t *testing.T) {
 		app, _ := New("greet", "0.1.0", WithIO(&bytes.Buffer{}, &bytes.Buffer{}))
-		if code := app.Execute(context.Background(), []string{"--version"}); code != ExitOK {
-			t.Fatalf("期望退出码 0，得到 %d", code)
-		}
+		testx.RequireEqual(t, app.Execute(context.Background(), []string{"--version"}), ExitOK)
 	})
 }
 
@@ -346,7 +303,5 @@ func TestExecuteInvalidAppCodeMapsToUsage(t *testing.T) {
 			return errx.NewCode(CodeInvalidApp, "配置非法")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"bad"}); code != ExitUsage {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitUsage, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"bad"}), ExitUsage)
 }

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/lcylpzls/testx"
 	"strings"
 	"sync"
 	"testing"
@@ -17,9 +18,7 @@ func TestObserver(t *testing.T) {
 		WithObserver(obs),
 	)
 	_ = app.AddCommand(&Command{Name: "hello", Action: okAction})
-	if code := app.Execute(context.Background(), []string{"hello", "a"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"hello", "a"}), ExitOK)
 	starts, finishes := obs.counts()
 	if starts != 1 || finishes != 1 {
 		t.Fatalf("观察者调用次数不匹配：start=%d finish=%d", starts, finishes)
@@ -38,9 +37,7 @@ func TestObserverRootAction(t *testing.T) {
 		WithObserver(obs),
 		WithRootAction(func(ctx context.Context, c *Context) error { return nil }),
 	)
-	if code := app.Execute(context.Background(), nil); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), nil), ExitOK)
 	if f := obs.lastFinish(); f.command != "（根命令）" {
 		t.Fatalf("根命令观察事件不匹配：%+v", f)
 	}
@@ -52,9 +49,7 @@ func TestObserverHelpNotTriggered(t *testing.T) {
 		WithIO(&bytes.Buffer{}, &bytes.Buffer{}),
 		WithObserver(obs),
 	)
-	if code := app.Execute(context.Background(), []string{"--help"}); code != ExitOK {
-		t.Fatalf("期望退出码 0，得到 %d", code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"--help"}), ExitOK)
 	starts, finishes := obs.counts()
 	if starts != 0 || finishes != 0 {
 		t.Fatalf("帮助不应触发观察者：start=%d finish=%d", starts, finishes)

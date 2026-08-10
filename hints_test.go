@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lcylpzls/errx"
+	"github.com/lcylpzls/testx"
 )
 
 func TestErrorHint(t *testing.T) {
@@ -21,9 +22,7 @@ func TestErrorHint(t *testing.T) {
 			return errx.NewCode("CLI_TEST_HINT", "连接失败")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if !strings.Contains(errBuf.String(), "提示：请检查网络后重试") {
 		t.Fatalf("错误提示缺失：%s", errBuf.String())
 	}
@@ -41,9 +40,7 @@ func TestErrorHintNoMatch(t *testing.T) {
 			return errx.NewCode("CLI_TEST_PLAIN", "普通失败")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if strings.Contains(errBuf.String(), "提示：") {
 		t.Fatalf("未注册的错误码不应输出提示：%s", errBuf.String())
 	}
@@ -61,9 +58,7 @@ func TestErrorHintPlainError(t *testing.T) {
 			return &plainError{}
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	if strings.Contains(errBuf.String(), "提示：") {
 		t.Fatalf("普通错误不应输出提示：%s", errBuf.String())
 	}
@@ -84,9 +79,7 @@ func TestRetryableErrorLogsWarn(t *testing.T) {
 			return errx.New(errx.KindTimeout, "CLI_TEST_RETRY", "上游超时")
 		},
 	})
-	if code := app.Execute(context.Background(), []string{"run"}); code != ExitFailure {
-		t.Fatalf("期望退出码 %d，得到 %d", ExitFailure, code)
-	}
+	testx.RequireEqual(t, app.Execute(context.Background(), []string{"run"}), ExitFailure)
 	_, _, warns, errors := logger.counts()
 	if warns != 1 || errors != 0 {
 		t.Fatalf("可重试错误应记 Warn：warns=%d errors=%d", warns, errors)
