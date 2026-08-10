@@ -3,7 +3,7 @@
 轻量、确定性、可测试的 Go CLI 框架：自用协议，与 errx / logx / confx /
 validx 家族天然打通。
 
-[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.26-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-%3E%3D1.26.5-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/lcylpzls/clix/actions/workflows/ci.yml/badge.svg)](https://github.com/lcylpzls/clix/actions/workflows/ci.yml)
 
