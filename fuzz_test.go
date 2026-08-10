@@ -65,6 +65,7 @@ func FuzzParseCommandArgs(f *testing.F) {
 		IntFlag("retry", "重试次数").Default(3),
 		EnumFlag("mode", "模式", "fast", "slow"),
 		StringSliceFlag("tag", "标签"),
+		StringFlag("name", "名称").Validate("required,min=2"),
 	}
 	f.Add("")
 	f.Add("hello --verbose")

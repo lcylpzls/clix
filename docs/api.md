@@ -1,8 +1,8 @@
 # API 快照
 
-> 随版本更新。v0.4.0 快照如下；新版本发布后同步替换。
+> 随版本更新。v0.5.0 快照如下；新版本发布后同步替换。
 
-## v0.4.0
+## v0.5.0
 
 ### 类型
 
@@ -70,6 +70,7 @@ func StringSliceFlag(name, usage string) FlagSpec
 func (f FlagSpec) Required() FlagSpec
 func (f FlagSpec) Default(v any) FlagSpec
 func (f FlagSpec) Env(name string) FlagSpec
+func (f FlagSpec) Validate(rules string) FlagSpec
 ```
 
 默认值规则：字符串/枚举为 string，布尔为 bool，整数为 int/int64，
@@ -78,6 +79,10 @@ func (f FlagSpec) Env(name string) FlagSpec
 
 取值优先级：命令行 > 环境变量 > 默认值；可重复 flag 的环境变量值
 使用逗号分隔并去除空白。环境变量同样满足必填校验。
+
+`Validate` 绑定 validx 规则串（如 `required,min=3`、`oneof=dev prod`）；
+规则语法在注册期预编译，值未通过校验时返回
+`CLI_FLAG_VALIDATION_FAILED`（退出码 2）。
 
 ### Context 访问器
 
@@ -115,6 +120,26 @@ func (c *Context) GlobalStrings(name string) []string
   视为该命令的本地 flag；
 - 全局 flag 支持全部类型、默认值、环境变量与必填校验；
 - 帮助文本展示"全局选项"区块。
+
+### confx 联动
+
+```go
+func LoadConfig(ctx context.Context, c *Context, manager *confx.ConfigManager,
+    pathFlag, fallback string, target any) error
+```
+
+- 适合在 `Before` 钩子中调用；路径优先取 flag `pathFlag`
+  （默认 `config`）的值，其次使用 `fallback`；
+- 加载错误透传 confx 结构化错误。
+
+### 错误提示与日志级别
+
+```go
+func WithErrorHint(code errx.Code, hint string) Option
+```
+
+- Action 返回注册过提示的错误码时，错误消息后输出"提示：..."；
+- 可重试错误（errx.Retryable）日志级别为 Warn，其余失败为 Error。
 
 ### 生命周期钩子
 

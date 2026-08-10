@@ -188,6 +188,9 @@ func flagHelpDesc(f FlagSpec) string {
 	if f.env != "" {
 		marks = append(marks, "环境变量 "+f.env)
 	}
+	if f.validate != "" {
+		marks = append(marks, "校验 "+f.validate)
+	}
 	desc := f.Usage
 	if len(marks) > 0 {
 		if desc != "" {

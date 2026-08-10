@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/lcylpzls/clix"
+	"github.com/lcylpzls/confx"
 )
 
 func main() {
@@ -92,6 +93,32 @@ func newApp(out, errOut io.Writer) (*clix.App, error) {
 		return nil, err
 	}
 	if err := app.AddCommand(remote); err != nil {
+		return nil, err
+	}
+	var cfg struct {
+		Greeting string `toml:"greeting"`
+		Retries  int    `toml:"retries"`
+	}
+	if err := app.AddCommand(&clix.Command{
+		Name:        "config",
+		Description: "加载 TOML 配置并打印问候语",
+		Flags: []clix.FlagSpec{
+			clix.StringFlag("path", "配置文件路径").Env("GREET_CONFIG").Default("config.toml").Validate("required"),
+			clix.StringFlag("mode", "运行模式").Default("dev").Validate("oneof=dev prod"),
+		},
+		Before: func(ctx context.Context, c *clix.Context) error {
+			manager, err := confx.NewConfigManager(confx.Toml)
+			if err != nil {
+				return err
+			}
+			return clix.LoadConfig(ctx, c, manager, "path", "", &cfg)
+		},
+		Action: func(ctx context.Context, c *clix.Context) error {
+			fmt.Fprintf(c.Out(), "问候语：%s（重试 %d 次，模式 %s）\n",
+				cfg.Greeting, cfg.Retries, c.String("mode"))
+			return nil
+		},
+	}); err != nil {
 		return nil, err
 	}
 	return app, nil

@@ -1,5 +1,26 @@
 # 更新日志
 
+## [v0.5.0] - 2026-08-10
+
+### 新增
+
+- validx 联动：`FlagSpec.Validate(rules)` 绑定 validx 规则串，
+  注册期预编译规则语法，解析期逐值校验；失败归一为
+  `CLI_FLAG_VALIDATION_FAILED`（用法错误，退出码 2）；
+- confx 联动：`LoadConfig` 助手在 Before 钩子中加载配置，
+  路径优先取 flag（默认 `config`）值，其次使用默认路径；
+- 错误提示：`WithErrorHint(code, hint)` 为错误码注册提示，
+  Action 失败时输出"提示：..."一行；
+- 日志级别联动：可重试错误（errx.Retryable）记录 Warn 级别
+  "命令执行失败（可重试）"，其余失败保持 Error；
+- 帮助文本展示 flag 校验规则；
+- 示例新增 `config` 命令：confx TOML 加载 + validx 规则校验 +
+  环境变量路径。
+
+### 质量
+
+- 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v0.4.0] - 2026-08-10
 
 ### 新增

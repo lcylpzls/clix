@@ -55,9 +55,28 @@ func (a *App) Execute(ctx context.Context, args []string) int {
 		return ExitFailure
 	default:
 		fmt.Fprintln(a.err, err.Error())
-		a.logError("命令执行失败", start, result, err)
+		if hint := a.errorHint(err); hint != "" {
+			fmt.Fprintln(a.err, "提示："+hint)
+		}
+		if errx.Retryable(err) {
+			a.logWarn("命令执行失败（可重试）", start, result, err)
+		} else {
+			a.logError("命令执行失败", start, result, err)
+		}
 		return ExitFailure
 	}
+}
+
+// errorHint 返回错误码注册的提示文本；未注册时返回空字符串。
+func (a *App) errorHint(err error) string {
+	if len(a.errorHints) == 0 {
+		return ""
+	}
+	code, ok := errx.CodeOf(err)
+	if !ok {
+		return ""
+	}
+	return a.errorHints[code]
 }
 
 // dispatch 完成参数解析与命令分发。

@@ -25,6 +25,7 @@ type App struct {
 
 	rootRegistry *registry
 	globalFlags  []FlagSpec
+	errorHints   map[errx.Code]string
 }
 
 // Option 修改 App 构造配置。
@@ -39,6 +40,7 @@ type appConfig struct {
 	logger      logx.Logger
 	root        ActionFunc
 	globalFlags []FlagSpec
+	errorHints  map[errx.Code]string
 }
 
 // WithDescription 设置应用描述，显示在帮助首行与命令列表中。
@@ -86,6 +88,17 @@ func WithGlobalFlags(flags ...FlagSpec) Option {
 	}
 }
 
+// WithErrorHint 为指定错误码注册错误提示；Action 返回该错误码时，
+// 错误消息后追加一行"提示：..."。
+func WithErrorHint(code errx.Code, hint string) Option {
+	return func(c *appConfig) {
+		if c.errorHints == nil {
+			c.errorHints = make(map[errx.Code]string)
+		}
+		c.errorHints[code] = hint
+	}
+}
+
 // New 构造 App。name 与 version 必须非空；配置非法时返回 errx 错误。
 func New(name, version string, opts ...Option) (*App, error) {
 	if strings.TrimSpace(name) == "" {
@@ -120,6 +133,7 @@ func New(name, version string, opts ...Option) (*App, error) {
 		root:         cfg.root,
 		rootRegistry: &registry{},
 		globalFlags:  cfg.globalFlags,
+		errorHints:   cfg.errorHints,
 	}, nil
 }
 

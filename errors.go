@@ -46,6 +46,8 @@ const (
 	CodeMissingArg errx.Code = "CLI_MISSING_ARG"
 	// CodeTooManyArgs 位置参数过多。
 	CodeTooManyArgs errx.Code = "CLI_TOO_MANY_ARGS"
+	// CodeFlagValidationFailed flag 值未通过 validx 规则校验。
+	CodeFlagValidationFailed errx.Code = "CLI_FLAG_VALIDATION_FAILED"
 )
 
 // usageErrorCodes 是全部用法错误码；命中任一码时 Execute 返回 ExitUsage。
@@ -63,6 +65,7 @@ var usageErrorCodes = []errx.Code{
 	CodeInvalidEnumValue,
 	CodeMissingArg,
 	CodeTooManyArgs,
+	CodeFlagValidationFailed,
 }
 
 // isUsageError 判断错误是否为用法错误（沿错误链匹配错误码）。
@@ -106,4 +109,6 @@ func init() {
 	errx.RegisterCodeKind(CodeMissingArg, errx.KindInvalid)
 	errx.RegisterCode(CodeTooManyArgs, "位置参数过多")
 	errx.RegisterCodeKind(CodeTooManyArgs, errx.KindInvalid)
+	errx.RegisterCode(CodeFlagValidationFailed, "flag 值未通过规则校验")
+	errx.RegisterCodeKind(CodeFlagValidationFailed, errx.KindInvalid)
 }

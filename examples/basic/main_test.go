@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -135,5 +137,38 @@ func TestGreetCLIGlobalFlag(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "详细模式") || !strings.Contains(out.String(), "你好，小明！") {
 		t.Fatalf("全局 flag 输出缺失：%s", out.String())
+	}
+}
+
+func TestGreetCLIConfig(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "app.toml")
+	if err := os.WriteFile(path, []byte("greeting = \"你好，配置文件！\"\nretries = 5\n"), 0o600); err != nil {
+		t.Fatalf("写配置失败：%v", err)
+	}
+	var out bytes.Buffer
+	app, err := newApp(&out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"config", "--path", path, "--mode", "prod"}); code != clix.ExitOK {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
+	}
+	if !strings.Contains(out.String(), "你好，配置文件！") || !strings.Contains(out.String(), "模式 prod") {
+		t.Fatalf("配置输出缺失：%s", out.String())
+	}
+}
+
+func TestGreetCLIConfigValidation(t *testing.T) {
+	var errBuf bytes.Buffer
+	app, err := newApp(&bytes.Buffer{}, &errBuf)
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"config", "--mode", "staging"}); code != clix.ExitUsage {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
+	}
+	if !strings.Contains(errBuf.String(), "CLI_FLAG_VALIDATION_FAILED") {
+		t.Fatalf("校验错误缺失：%s", errBuf.String())
 	}
 }

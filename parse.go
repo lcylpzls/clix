@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lcylpzls/errx"
+	"github.com/lcylpzls/validx"
 )
 
 // ValueKind 标识 flag 值的类型。
@@ -49,6 +50,7 @@ type FlagSpec struct {
 	required   bool
 	defaultVal any
 	env        string
+	validate   string
 	kind       ValueKind
 }
 
@@ -113,6 +115,13 @@ func (f FlagSpec) Default(v any) FlagSpec {
 // 可重复 flag 的环境变量值使用逗号分隔。
 func (f FlagSpec) Env(name string) FlagSpec {
 	f.env = name
+	return f
+}
+
+// Validate 绑定 validx 规则串（如 "required,min=3" / "oneof=dev prod"）。
+// 值未通过校验时返回 CLI_FLAG_VALIDATION_FAILED（用法错误，退出码 2）。
+func (f FlagSpec) Validate(rules string) FlagSpec {
+	f.validate = strings.TrimSpace(rules)
 	return f
 }
 
@@ -235,6 +244,11 @@ func validateFlagSpecs(flags []FlagSpec) error {
 		if f.env != "" && !validEnvName(f.env) {
 			return errx.NewCodef(CodeInvalidFlagDef, "flag %q 的环境变量名 %q 非法", name, f.env)
 		}
+		if f.validate != "" {
+			if err := checkValidationRules(f.kind, f.validate); err != nil {
+				return err
+			}
+		}
 		if f.defaultVal != nil {
 			if err := checkDefaultValue(name, f.kind, f.defaultVal); err != nil {
 				return err
@@ -245,6 +259,40 @@ func validateFlagSpecs(flags []FlagSpec) error {
 		}
 	}
 	return nil
+}
+
+// checkValidationRules 在注册期预编译 validx 规则串，语法非法时返回错误。
+func checkValidationRules(kind ValueKind, rules string) error {
+	// 无选项时 validx.New 不会失败，注册期预编译仅校验规则语法。
+	validator, _ := validx.New()
+	if err := validator.ValidateField(zeroValueForKind(kind), rules); err != nil {
+		if errx.Is(err, validx.CodeInvalidRule) {
+			return errx.WrapCode(err, CodeInvalidFlagDef, "flag 校验规则非法")
+		}
+		// 规则合法但零值未通过：注册期忽略，解析期按实际值校验。
+		return nil
+	}
+	return nil
+}
+
+// zeroValueForKind 返回各 flag 类型的零值（用于规则预编译）。
+func zeroValueForKind(kind ValueKind) any {
+	switch kind {
+	case KindBool:
+		return false
+	case KindInt:
+		return 0
+	case KindInt64:
+		return int64(0)
+	case KindFloat64:
+		return float64(0)
+	case KindDuration:
+		return time.Duration(0)
+	case KindStringSlice:
+		return []string{}
+	default:
+		return ""
+	}
 }
 
 // validEnvName 校验环境变量名：以字母或下划线开头，仅含字母、数字、下划线。
@@ -428,6 +476,9 @@ func parseCommandArgs(args []ArgSpec, flags []FlagSpec, raw []string) ([]string,
 	if err := applyEnvValues(flags, values); err != nil {
 		return nil, FlagValues{}, err
 	}
+	if err := validateFlagValues(flags, values); err != nil {
+		return nil, FlagValues{}, err
+	}
 	for _, f := range flags {
 		if f.required && !values[f.Name].present {
 			return nil, FlagValues{}, errx.NewCodef(CodeMissingRequiredFlag, "缺少必填 flag %q", f.Name)
@@ -440,6 +491,48 @@ func parseCommandArgs(args []ArgSpec, flags []FlagSpec, raw []string) ([]string,
 		}
 	}
 	return positional, FlagValues{values: values}, nil
+}
+
+// validateFlagValues 对声明了 validx 规则的 flag 值执行校验。
+func validateFlagValues(flags []FlagSpec, values map[string]flagValue) error {
+	validator, _ := validx.New()
+	for i := range flags {
+		f := &flags[i]
+		if f.validate == "" {
+			continue
+		}
+		for _, val := range valuesForValidation(values[f.Name]) {
+			if err := validator.ValidateField(val, f.validate); err != nil {
+				return errx.WrapCodef(err, CodeFlagValidationFailed, "flag %q 校验失败", f.Name)
+			}
+		}
+	}
+	return nil
+}
+
+// valuesForValidation 将 flag 存储转换为可校验的值列表（切片逐元素校验）。
+func valuesForValidation(v flagValue) []any {
+	if v.kind == KindStringSlice {
+		out := make([]any, 0, len(v.strs))
+		for _, s := range v.strs {
+			out = append(out, s)
+		}
+		return out
+	}
+	switch v.kind {
+	case KindBool:
+		return []any{v.b}
+	case KindInt:
+		return []any{v.i}
+	case KindInt64:
+		return []any{v.i64}
+	case KindFloat64:
+		return []any{v.f}
+	case KindDuration:
+		return []any{v.dur}
+	default:
+		return []any{v.str}
+	}
 }
 
 // applyEnvValues 为未显式指定的 flag 应用环境变量值（环境变量 > 默认值）。
