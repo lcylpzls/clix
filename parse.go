@@ -217,7 +217,7 @@ func (c *Context) Strings(name string) []string {
 	if !ok {
 		return nil
 	}
-	return v.strs
+	return append([]string(nil), v.strs...)
 }
 
 // validateFlagSpecs 校验 flag 定义集合。

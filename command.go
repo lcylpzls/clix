@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 	"sync"
+	"sync/atomic"
 
 	"github.com/lcylpzls/errx"
 	"github.com/lcylpzls/logx"
@@ -43,7 +44,7 @@ type Command struct {
 
 	parent     *Command
 	children   registry
-	registered bool
+	registered atomic.Bool
 }
 
 // Context 是 Action 的执行上下文，携带 App、当前命令与参数。
@@ -141,14 +142,14 @@ func (r *registry) add(cmd *Command) error {
 	if cmd.Action == nil && cmd.children.count() == 0 {
 		return errx.NewCodef(CodeInvalidApp, "命令 %q 未定义执行函数且无子命令", name)
 	}
-	aliases, err := normalizeAliases(cmd)
+	aliases, err := normalizeAliases(cmd, name)
 	if err != nil {
 		return err
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if cmd.registered {
+	if cmd.registered.Load() {
 		return errx.NewCodef(CodeInvalidApp, "命令 %q 已注册", name)
 	}
 	if r.byName == nil {
@@ -171,7 +172,7 @@ func (r *registry) add(cmd *Command) error {
 	}
 	cmd.Name = name
 	cmd.Aliases = aliases
-	cmd.registered = true
+	cmd.registered.Store(true)
 	r.byName[name] = cmd
 	for _, alias := range aliases {
 		r.aliases[alias] = cmd
@@ -181,7 +182,7 @@ func (r *registry) add(cmd *Command) error {
 }
 
 // normalizeAliases 校验并规范化命令别名，返回去重后的列表。
-func normalizeAliases(cmd *Command) ([]string, error) {
+func normalizeAliases(cmd *Command, name string) ([]string, error) {
 	seen := make(map[string]struct{}, len(cmd.Aliases))
 	var out []string
 	for _, alias := range cmd.Aliases {
@@ -192,7 +193,7 @@ func normalizeAliases(cmd *Command) ([]string, error) {
 		if !validFlagName(a) {
 			return nil, errx.NewCodef(CodeInvalidApp, "非法命令别名 %q", a)
 		}
-		if a == cmd.Name {
+		if a == name {
 			return nil, errx.NewCodef(CodeInvalidApp, "命令别名 %q 不能与命令名相同", a)
 		}
 		if _, dup := seen[a]; dup {

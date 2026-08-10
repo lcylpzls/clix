@@ -177,5 +177,5 @@ func (c *Context) GlobalStrings(name string) []string {
 	if !ok {
 		return nil
 	}
-	return v.strs
+	return append([]string(nil), v.strs...)
 }

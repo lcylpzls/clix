@@ -99,7 +99,7 @@ func (c *Context) Strings(name string) []string
 ```
 
 未声明或未指定的 flag 返回类型零值；`HasFlag` 仅对显式指定的 flag
-返回 true。
+返回 true。`Strings` / `GlobalStrings` 返回副本，修改不影响内部存储。
 
 ### 全局 flag
 

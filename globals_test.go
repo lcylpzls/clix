@@ -253,3 +253,18 @@ func TestGlobalAccessorsZero(t *testing.T) {
 		t.Fatal("未声明全局 flag 应返回零值")
 	}
 }
+
+func TestGlobalStringsReturnsCopy(t *testing.T) {
+	app, _ := New("greet", "0.1.0",
+		WithGlobalFlags(StringSliceFlag("tag", "")))
+	fv, _, err := app.stripGlobalFlags([]string{"--tag", "a"})
+	if err != nil {
+		t.Fatalf("解析失败：%v", err)
+	}
+	ctx := &Context{Global: fv}
+	got := ctx.GlobalStrings("tag")
+	got[0] = "改坏"
+	if ctx.GlobalStrings("tag")[0] != "a" {
+		t.Fatal("修改返回切片不应影响内部存储")
+	}
+}

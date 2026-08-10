@@ -267,6 +267,9 @@ func TestCommandRegistrationValidation(t *testing.T) {
 		{"别名与命令名相同", func(app *App) error {
 			return app.AddCommand(&Command{Name: "a", Aliases: []string{"a"}, Action: okAction})
 		}, CodeInvalidApp},
+		{"别名与去空格命令名相同", func(app *App) error {
+			return app.AddCommand(&Command{Name: " a ", Aliases: []string{"a"}, Action: okAction})
+		}, CodeInvalidApp},
 		{"别名重复", func(app *App) error {
 			return app.AddCommand(&Command{Name: "a", Aliases: []string{"x", "x"}, Action: okAction})
 		}, CodeInvalidApp},

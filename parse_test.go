@@ -269,6 +269,21 @@ func TestContextFlagAccessors(t *testing.T) {
 	}
 }
 
+func TestStringsReturnsCopy(t *testing.T) {
+	_, fv, err := parseCommandArgs(nil, []FlagSpec{
+		StringSliceFlag("sl", "").Default([]string{"a"}),
+	}, []string{"--sl", "b"})
+	if err != nil {
+		t.Fatalf("解析失败：%v", err)
+	}
+	ctx := &Context{Flags: fv}
+	got := ctx.Strings("sl")
+	got[0] = "改坏"
+	if ctx.Strings("sl")[0] != "b" {
+		t.Fatal("修改返回切片不应影响内部存储")
+	}
+}
+
 func TestValidFlagName(t *testing.T) {
 	if validFlagName("") {
 		t.Fatal("空名应非法")
