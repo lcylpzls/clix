@@ -36,15 +36,15 @@ func (a *App) Execute(ctx context.Context, args []string) int {
 		a.logInfo("命令执行成功", start, result, nil)
 		return ExitOK
 	}
-	switch {
-	case errx.Is(err, CodeMissingCommand) || errx.Is(err, CodeUnknownCommand) ||
-		errx.Is(err, CodeInvalidApp):
+	if isUsageError(err) {
 		fmt.Fprintln(a.err, err.Error())
 		if errx.Is(err, CodeMissingCommand) {
 			fmt.Fprintln(a.err, "运行 --help 查看用法")
 		}
 		a.logWarn("命令用法错误", start, result, err)
 		return ExitUsage
+	}
+	switch {
 	case errx.Is(err, CodeCancelled):
 		fmt.Fprintln(a.err, err.Error())
 		a.logError("命令执行被取消", start, result, err)
@@ -70,7 +70,7 @@ func (a *App) dispatch(ctx context.Context, args []string) (runResult, error) {
 	}
 	if len(args) == 0 {
 		if a.root != nil {
-			return a.invoke(ctx, nil, nil)
+			return a.invoke(ctx, nil, &Context{App: a, Args: nil})
 		}
 		return runResult{}, errx.NewCode(CodeMissingCommand, "缺少命令")
 	}
@@ -87,24 +87,46 @@ func (a *App) dispatch(ctx context.Context, args []string) (runResult, error) {
 	if cmd == nil {
 		return runResult{}, errx.NewCodef(CodeUnknownCommand, "未知命令 %q，请运行 --help 查看可用命令", args[0])
 	}
-	return a.invoke(ctx, cmd, args[1:])
+	rest := args[1:]
+	if hasHelpRequest(rest) {
+		fmt.Fprintln(a.out, a.renderCommandHelp(cmd))
+		return runResult{command: cmd}, nil
+	}
+	positional, flags, err := parseCommandArgs(cmd.Args, cmd.Flags, rest)
+	if err != nil {
+		return runResult{command: cmd}, err
+	}
+	return a.invoke(ctx, cmd, &Context{App: a, Command: cmd, Args: positional, Flags: flags})
 }
 
 // invoke 执行根 Action 或子命令 Action，并恢复未捕获异常。
-func (a *App) invoke(ctx context.Context, cmd *Command, args []string) (res runResult, err error) {
+func (a *App) invoke(ctx context.Context, cmd *Command, c *Context) (res runResult, err error) {
 	action := a.root
 	if cmd != nil {
 		action = cmd.Action
 	}
-	res = runResult{command: cmd, args: args}
+	res = runResult{command: cmd, args: c.Args}
 	defer func() {
 		if r := recover(); r != nil {
-			res = runResult{command: cmd, args: args}
+			res = runResult{command: cmd, args: c.Args}
 			err = errx.NewCodef(CodeActionPanic, "命令执行发生未捕获异常：%v", r)
 		}
 	}()
-	err = action(ctx, &Context{App: a, Command: cmd, Args: args})
+	err = action(ctx, c)
 	return res, err
+}
+
+// hasHelpRequest 判断参数中是否请求命令帮助（遇到 "--" 后不再识别）。
+func hasHelpRequest(raw []string) bool {
+	for _, tok := range raw {
+		if tok == "--" {
+			return false
+		}
+		if tok == "-h" || tok == "--help" {
+			return true
+		}
+	}
+	return false
 }
 
 // printHelp 输出应用或命令帮助；help 后跟未知命令时返回 errx 错误。

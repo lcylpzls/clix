@@ -1,5 +1,27 @@
 # 更新日志
 
+## [v0.2.0] - 2026-08-10
+
+### 新增
+
+- 类型化参数解析：
+  - `ArgSpec` 位置参数（必填/变参，变参只能是最后一个）；
+  - `FlagSpec` 八种类型：string / bool / int / int64 / float / duration /
+    enum / string[]，支持必填、默认值与枚举允许列表；
+  - `--name=值` 与 `--name 值` 两种写法，`--` 终止 flag 解析；
+  - 未知 flag、重复 flag、缺少值、类型非法、缺少必填、枚举越界、
+    位置参数数量错误均归一为 errx 用法错误码（退出码 2）；
+- Context 类型化访问器：`String` / `Bool` / `Int` / `Int64` / `Float64` /
+  `Duration` / `Enum` / `Strings` / `HasFlag`；
+- 命令帮助自动渲染参数与选项（含必填/默认/枚举说明）；
+- 命令参数中的 `-h` / `--help` 显示命令帮助且不执行 Action；
+- `FuzzParseCommandArgs` fuzz 目标接入 CI；
+- 示例新增 `sum` 命令（变参 + int/enum flag）。
+
+### 质量
+
+- 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v0.1.0] - 2026-08-10
 
 ### 新增
@@ -19,4 +41,3 @@
 ### 质量
 
 - 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
-

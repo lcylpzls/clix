@@ -125,6 +125,28 @@ func TestAddCommandDuplicate(t *testing.T) {
 	assertErrCode(t, err, CodeInvalidApp)
 }
 
+func TestAddCommandInvalidDeclarations(t *testing.T) {
+	app := newTestApp(t)
+	if err := app.AddCommand(&Command{
+		Name:   "badflag",
+		Flags:  []FlagSpec{{Name: ""}},
+		Action: okAction,
+	}); err == nil {
+		t.Fatal("非法 flag 定义应报错")
+	} else {
+		assertErrCode(t, err, CodeInvalidFlagDef)
+	}
+	if err := app.AddCommand(&Command{
+		Name:   "badarg",
+		Args:   []ArgSpec{{Name: ""}},
+		Action: okAction,
+	}); err == nil {
+		t.Fatal("非法参数定义应报错")
+	} else {
+		assertErrCode(t, err, CodeInvalidArgDef)
+	}
+}
+
 func TestAddCommandNormalizesName(t *testing.T) {
 	app := newTestApp(t)
 	if err := app.AddCommand(&Command{Name: "  greet  ", Description: "问候", Action: okAction}); err != nil {
@@ -206,7 +228,7 @@ func TestCommandHelpText(t *testing.T) {
 	if err != nil {
 		t.Fatalf("期望成功，得到 %v", err)
 	}
-	if !strings.Contains(text, "用法:\n  greet hello [参数...]\n") {
+	if !strings.Contains(text, "用法:\n  greet hello [选项...] [参数...]\n") {
 		t.Fatalf("默认用法缺失：\n%s", text)
 	}
 	if !strings.Contains(text, "描述:\n  问候") {

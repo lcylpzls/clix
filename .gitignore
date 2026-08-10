@@ -1,5 +1,5 @@
 # 测试产物
-coverage.out
+coverage*.out
 coverage
 cover.html
 *.test
@@ -17,4 +17,3 @@ Thumbs.db
 
 # 本地数据
 *.tmp
-

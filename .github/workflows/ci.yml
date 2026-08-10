@@ -115,6 +115,7 @@ jobs:
       - name: Fuzz short run (5s per target)
         run: |
           go test -run '^$' -fuzz '^FuzzExecute$' -fuzztime=5s .
+          go test -run '^$' -fuzz '^FuzzParseCommandArgs$' -fuzztime=5s .
           go test -run '^$' -fuzz '^FuzzCommandHelpText$' -fuzztime=5s .
 
   vulncheck:

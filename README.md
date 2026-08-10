@@ -46,6 +46,9 @@ func main() {
 
 - **命令分发**：根 Action + 子命令，`-h/--help/help [命令]/--version`
   内置约定；
+- **类型化参数解析**：位置参数（必填/变参）+ 八种 flag 类型
+  （string / bool / int / int64 / float / duration / enum / string[]），
+  支持必填、默认值、枚举校验与 `--` 终止符；
 - **退出码约定**：0 成功、1 执行失败、2 用法错误、130 取消；
 - **errx 家族错误**：用法/取消/恐慌均结构化错误码，Action 错误原样透传；
 - **logx 结构化日志**：可选注入，记录命令开始/成功/失败与耗时；
@@ -63,4 +66,3 @@ func main() {
 ## License
 
 MIT © [lcylpzls](https://github.com/lcylpzls)
-

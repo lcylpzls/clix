@@ -20,7 +20,11 @@ type Command struct {
 	Name        string
 	Description string
 	Usage       string
-	Action      ActionFunc
+	// Args 声明位置参数；为 nil 时原样透传原始参数。
+	Args []ArgSpec
+	// Flags 声明 flag；为 nil 时不做 flag 解析。
+	Flags  []FlagSpec
+	Action ActionFunc
 }
 
 // Context 是 Action 的执行上下文，携带 App、当前命令与原始参数。
@@ -31,6 +35,8 @@ type Context struct {
 	Command *Command
 	// Args 是命令名之后的原始参数（v0.2.0 起由参数解析层消费）。
 	Args []string
+	// Flags 是解析后的 flag 值；未声明 flag 或未解析时为空。
+	Flags FlagValues
 }
 
 // Out 返回应用注入的标准输出流。

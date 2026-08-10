@@ -39,7 +39,7 @@ func TestExecuteHelpCommand(t *testing.T) {
 	if code := app.Execute(context.Background(), []string{"help", "hello"}); code != ExitOK {
 		t.Fatalf("期望退出码 0，得到 %d", code)
 	}
-	if !strings.Contains(out.String(), "greet hello [参数...]") {
+	if !strings.Contains(out.String(), "greet hello [选项...] [参数...]") {
 		t.Fatalf("命令帮助缺失：\n%s", out.String())
 	}
 }

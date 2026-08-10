@@ -128,6 +128,12 @@ func (a *App) AddCommand(cmd *Command) error {
 	if cmd.Action == nil {
 		return errx.NewCodef(CodeInvalidApp, "命令 %q 未定义执行函数", name)
 	}
+	if err := validateFlagSpecs(cmd.Flags); err != nil {
+		return err
+	}
+	if err := validateArgSpecs(cmd.Args); err != nil {
+		return err
+	}
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	if _, dup := a.commands[name]; dup {

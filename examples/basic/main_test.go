@@ -53,3 +53,45 @@ func TestGreetCLIUsageError(t *testing.T) {
 		t.Fatalf("错误输出缺失：%s", errBuf.String())
 	}
 }
+
+func TestGreetCLISum(t *testing.T) {
+	var out bytes.Buffer
+	app, err := newApp(&out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"sum", "1", "2", "3", "--base", "10"}); code != clix.ExitOK {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
+	}
+	if !strings.Contains(out.String(), "16") {
+		t.Fatalf("求和输出缺失：%s", out.String())
+	}
+}
+
+func TestGreetCLISumAverage(t *testing.T) {
+	var out bytes.Buffer
+	app, err := newApp(&out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"sum", "2", "4", "6", "--mode", "average"}); code != clix.ExitOK {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
+	}
+	if !strings.Contains(out.String(), "4") {
+		t.Fatalf("平均值输出缺失：%s", out.String())
+	}
+}
+
+func TestGreetCLISumUsageError(t *testing.T) {
+	var errBuf bytes.Buffer
+	app, err := newApp(&bytes.Buffer{}, &errBuf)
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"sum", "1", "--mode", "slow"}); code != clix.ExitUsage {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
+	}
+	if !strings.Contains(errBuf.String(), "不在允许列表") {
+		t.Fatalf("错误输出缺失：%s", errBuf.String())
+	}
+}

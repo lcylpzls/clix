@@ -26,7 +26,54 @@ const (
 	CodeCancelled errx.Code = "CLI_CANCELLED"
 	// CodeActionPanic 命令执行发生未捕获异常。
 	CodeActionPanic errx.Code = "CLI_ACTION_PANIC"
+	// CodeInvalidFlagDef flag 定义非法（配置错误）。
+	CodeInvalidFlagDef errx.Code = "CLI_INVALID_FLAG_DEF"
+	// CodeInvalidArgDef 位置参数定义非法（配置错误）。
+	CodeInvalidArgDef errx.Code = "CLI_INVALID_ARG_DEF"
+	// CodeUnknownFlag 未知 flag。
+	CodeUnknownFlag errx.Code = "CLI_UNKNOWN_FLAG"
+	// CodeDuplicateFlag 非重复 flag 被重复指定。
+	CodeDuplicateFlag errx.Code = "CLI_DUPLICATE_FLAG"
+	// CodeMissingFlagValue flag 缺少值。
+	CodeMissingFlagValue errx.Code = "CLI_MISSING_FLAG_VALUE"
+	// CodeInvalidFlagValue flag 值类型非法。
+	CodeInvalidFlagValue errx.Code = "CLI_INVALID_FLAG_VALUE"
+	// CodeMissingRequiredFlag 缺少必填 flag。
+	CodeMissingRequiredFlag errx.Code = "CLI_MISSING_REQUIRED_FLAG"
+	// CodeInvalidEnumValue 枚举 flag 值不在允许列表。
+	CodeInvalidEnumValue errx.Code = "CLI_INVALID_ENUM_VALUE"
+	// CodeMissingArg 缺少必填位置参数。
+	CodeMissingArg errx.Code = "CLI_MISSING_ARG"
+	// CodeTooManyArgs 位置参数过多。
+	CodeTooManyArgs errx.Code = "CLI_TOO_MANY_ARGS"
 )
+
+// usageErrorCodes 是全部用法错误码；命中任一码时 Execute 返回 ExitUsage。
+var usageErrorCodes = []errx.Code{
+	CodeInvalidApp,
+	CodeMissingCommand,
+	CodeUnknownCommand,
+	CodeInvalidFlagDef,
+	CodeInvalidArgDef,
+	CodeUnknownFlag,
+	CodeDuplicateFlag,
+	CodeMissingFlagValue,
+	CodeInvalidFlagValue,
+	CodeMissingRequiredFlag,
+	CodeInvalidEnumValue,
+	CodeMissingArg,
+	CodeTooManyArgs,
+}
+
+// isUsageError 判断错误是否为用法错误（沿错误链匹配错误码）。
+func isUsageError(err error) bool {
+	for _, code := range usageErrorCodes {
+		if errx.Is(err, code) {
+			return true
+		}
+	}
+	return false
+}
 
 func init() {
 	errx.RegisterCode(CodeInvalidApp, "应用或命令配置非法")
@@ -39,4 +86,24 @@ func init() {
 	errx.RegisterCodeKind(CodeCancelled, errx.KindCancelled)
 	errx.RegisterCode(CodeActionPanic, "命令执行发生未捕获异常")
 	errx.RegisterCodeKind(CodeActionPanic, errx.KindInternal)
+	errx.RegisterCode(CodeInvalidFlagDef, "flag 定义非法")
+	errx.RegisterCodeKind(CodeInvalidFlagDef, errx.KindInvalid)
+	errx.RegisterCode(CodeInvalidArgDef, "位置参数定义非法")
+	errx.RegisterCodeKind(CodeInvalidArgDef, errx.KindInvalid)
+	errx.RegisterCode(CodeUnknownFlag, "未知 flag")
+	errx.RegisterCodeKind(CodeUnknownFlag, errx.KindInvalid)
+	errx.RegisterCode(CodeDuplicateFlag, "非重复 flag 被重复指定")
+	errx.RegisterCodeKind(CodeDuplicateFlag, errx.KindInvalid)
+	errx.RegisterCode(CodeMissingFlagValue, "flag 缺少值")
+	errx.RegisterCodeKind(CodeMissingFlagValue, errx.KindInvalid)
+	errx.RegisterCode(CodeInvalidFlagValue, "flag 值类型非法")
+	errx.RegisterCodeKind(CodeInvalidFlagValue, errx.KindInvalid)
+	errx.RegisterCode(CodeMissingRequiredFlag, "缺少必填 flag")
+	errx.RegisterCodeKind(CodeMissingRequiredFlag, errx.KindInvalid)
+	errx.RegisterCode(CodeInvalidEnumValue, "枚举 flag 值不在允许列表")
+	errx.RegisterCodeKind(CodeInvalidEnumValue, errx.KindInvalid)
+	errx.RegisterCode(CodeMissingArg, "缺少必填位置参数")
+	errx.RegisterCodeKind(CodeMissingArg, errx.KindInvalid)
+	errx.RegisterCode(CodeTooManyArgs, "位置参数过多")
+	errx.RegisterCodeKind(CodeTooManyArgs, errx.KindInvalid)
 }

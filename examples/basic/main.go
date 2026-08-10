@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/lcylpzls/clix"
@@ -37,6 +38,34 @@ func newApp(out, errOut io.Writer) (*clix.App, error) {
 				name = "世界"
 			}
 			fmt.Fprintf(c.Out(), "你好，%s！\n", name)
+			return nil
+		},
+	}); err != nil {
+		return nil, err
+	}
+	if err := app.AddCommand(&clix.Command{
+		Name:        "sum",
+		Description: "对若干数字求和或求平均值",
+		Args: []clix.ArgSpec{
+			{Name: "numbers", Description: "参与计算的数字", Required: true, Variadic: true},
+		},
+		Flags: []clix.FlagSpec{
+			clix.IntFlag("base", "基数").Default(0),
+			clix.EnumFlag("mode", "计算模式", "sum", "average").Default("sum"),
+		},
+		Action: func(ctx context.Context, c *clix.Context) error {
+			total := c.Int("base")
+			for _, raw := range c.Args {
+				n, err := strconv.Atoi(raw)
+				if err != nil {
+					return fmt.Errorf("无效数字 %q", raw)
+				}
+				total += n
+			}
+			if c.Enum("mode") == "average" && len(c.Args) > 0 {
+				total /= len(c.Args)
+			}
+			fmt.Fprintf(c.Out(), "%d\n", total)
 			return nil
 		},
 	}); err != nil {
