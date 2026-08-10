@@ -23,7 +23,7 @@ func main() {
 
 // newApp 构建问候示例应用，测试与 main 共用同一构造。
 func newApp(out, errOut io.Writer) (*clix.App, error) {
-	app, err := clix.New("greet", "0.1.0",
+	app, err := clix.New("greet", "1.0.0",
 		clix.WithDescription("问候示例 CLI"),
 		clix.WithIO(out, errOut),
 		clix.WithGlobalFlags(clix.BoolFlag("verbose", "详细输出").Env("GREET_VERBOSE")),

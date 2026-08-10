@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-    app, err := clix.New("greet", "0.1.0",
+    app, err := clix.New("greet", "1.0.0",
         clix.WithDescription("问候示例"),
         clix.WithIO(os.Stdout, os.Stderr),
     )

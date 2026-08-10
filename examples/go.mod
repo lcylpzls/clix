@@ -3,7 +3,7 @@ module github.com/lcylpzls/clix/examples
 go 1.26.5
 
 require (
-	github.com/lcylpzls/clix v0.6.0
+	github.com/lcylpzls/clix v1.0.0
 	github.com/lcylpzls/confx v0.3.3
 )
 
