@@ -19,6 +19,18 @@ func (a *App) HelpText() string {
 	fmt.Fprintf(&b, "  %s\n\n", a.usageLine())
 	b.WriteString("命令:\n")
 	b.WriteString(renderCommandList(a.commandList()))
+	if len(a.globalFlags) > 0 {
+		b.WriteString("\n全局选项:\n")
+		width := 0
+		for _, f := range a.globalFlags {
+			if l := len(flagDisplay(f)); l > width {
+				width = l
+			}
+		}
+		for _, f := range a.globalFlags {
+			fmt.Fprintf(&b, "  %-*s  %s\n", width, flagDisplay(f), flagHelpDesc(f))
+		}
+	}
 	b.WriteString("\n选项:\n")
 	b.WriteString("  -h, --help     显示帮助\n")
 	b.WriteString("      --version  显示版本\n")
@@ -172,6 +184,9 @@ func flagHelpDesc(f FlagSpec) string {
 	}
 	if f.defaultVal != nil {
 		marks = append(marks, "默认 "+fmt.Sprint(f.defaultVal))
+	}
+	if f.env != "" {
+		marks = append(marks, "环境变量 "+f.env)
 	}
 	desc := f.Usage
 	if len(marks) > 0 {

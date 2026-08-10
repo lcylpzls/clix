@@ -123,3 +123,17 @@ func TestGreetCLINestedRemoteMissingSubcommand(t *testing.T) {
 		t.Fatalf("错误输出缺失：%s", errBuf.String())
 	}
 }
+
+func TestGreetCLIGlobalFlag(t *testing.T) {
+	var out bytes.Buffer
+	app, err := newApp(&out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"--verbose", "hello", "小明"}); code != clix.ExitOK {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
+	}
+	if !strings.Contains(out.String(), "详细模式") || !strings.Contains(out.String(), "你好，小明！") {
+		t.Fatalf("全局 flag 输出缺失：%s", out.String())
+	}
+}

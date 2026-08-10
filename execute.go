@@ -68,43 +68,51 @@ func (a *App) dispatch(ctx context.Context, args []string) (runResult, error) {
 	if err := ctx.Err(); err != nil {
 		return runResult{}, errx.NewCode(CodeCancelled, "执行被上下文取消")
 	}
-	if len(args) == 0 {
+	globalVals, rest, err := a.stripGlobalFlags(args)
+	if err != nil {
+		return runResult{}, err
+	}
+	if len(rest) == 0 {
 		if a.root != nil {
-			return a.invoke(ctx, nil, &Context{App: a, Args: nil})
+			return a.invoke(ctx, nil, &Context{App: a, Global: globalVals})
 		}
 		return runResult{}, errx.NewCode(CodeMissingCommand, "缺少命令")
 	}
-	switch args[0] {
+	switch rest[0] {
 	case "-h", "--help":
-		return runResult{}, a.printHelp(args[1:])
+		return runResult{}, a.printHelp(rest[1:])
 	case "help":
-		return runResult{}, a.printHelp(args[1:])
+		return runResult{}, a.printHelp(rest[1:])
 	case "--version":
 		fmt.Fprintf(a.out, "%s %s\n", a.name, a.version)
 		return runResult{}, nil
 	}
-	cmd, rest := a.resolve(args)
-	if cmd == nil {
-		return runResult{}, errx.NewCodef(CodeUnknownCommand, "未知命令 %q，请运行 --help 查看可用命令", args[0])
+	if rest[0] != "--" && strings.HasPrefix(rest[0], "--") {
+		return runResult{}, errx.NewCodef(CodeUnknownFlag,
+			"未知全局 flag %q，全局 flag 必须位于命令之前", rest[0])
 	}
-	if hasHelpRequest(rest) {
+	cmd, cmdRest := a.resolve(rest)
+	if cmd == nil {
+		return runResult{}, errx.NewCodef(CodeUnknownCommand, "未知命令 %q，请运行 --help 查看可用命令", rest[0])
+	}
+	if hasHelpRequest(cmdRest) {
 		fmt.Fprintln(a.out, a.renderCommandHelp(cmd))
 		return runResult{command: cmd}, nil
 	}
 	if cmd.Action == nil {
-		if len(rest) == 0 {
+		if len(cmdRest) == 0 {
 			return runResult{command: cmd}, errx.NewCodef(CodeMissingCommand,
 				"命令 %q 需要子命令，请运行 %s --help 查看可用子命令", cmd.FullName(), cmd.FullName())
 		}
 		return runResult{command: cmd}, errx.NewCodef(CodeUnknownCommand,
 			"未知子命令 %q（命令 %q 下），请运行 %s --help 查看可用子命令",
-			rest[0], cmd.FullName(), cmd.FullName())
+			cmdRest[0], cmd.FullName(), cmd.FullName())
 	}
-	positional, flags, err := parseCommandArgs(cmd.Args, cmd.Flags, rest)
+	positional, flags, err := parseCommandArgs(cmd.Args, cmd.Flags, cmdRest)
 	if err != nil {
 		return runResult{command: cmd}, err
 	}
-	return a.invoke(ctx, cmd, &Context{App: a, Command: cmd, Args: positional, Flags: flags})
+	return a.invoke(ctx, cmd, &Context{App: a, Command: cmd, Args: positional, Flags: flags, Global: globalVals})
 }
 
 // resolve 沿命令树解析参数：逐个匹配子命令名/别名，直到首个非命令参数。
@@ -155,7 +163,21 @@ func (a *App) invoke(ctx context.Context, cmd *Command, c *Context) (res runResu
 			err = errx.NewCodef(CodeActionPanic, "命令执行发生未捕获异常：%v", r)
 		}
 	}()
+	if cmd != nil && cmd.Before != nil {
+		if hookErr := cmd.Before(ctx, c); hookErr != nil {
+			return res, hookErr
+		}
+	}
 	err = action(ctx, c)
+	if cmd != nil && cmd.After != nil {
+		if afterErr := cmd.After(ctx, c); afterErr != nil {
+			if err != nil {
+				err = errx.Join(err, afterErr)
+			} else {
+				err = afterErr
+			}
+		}
+	}
 	return res, err
 }
 

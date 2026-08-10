@@ -1,8 +1,8 @@
 # API 快照
 
-> 随版本更新。v0.3.0 快照如下；新版本发布后同步替换。
+> 随版本更新。v0.4.0 快照如下；新版本发布后同步替换。
 
-## v0.3.0
+## v0.4.0
 
 ### 类型
 
@@ -17,12 +17,15 @@ type Command struct {
     Aliases     []string   // 命令别名（须合法且不与同级冲突）
     Group       string     // 帮助列表分组名；空为默认组
     Action      ActionFunc // 执行函数；与子命令至少提供一个
+    Before      ActionFunc // Action 前钩子；失败则中止 Action 与 After
+    After       ActionFunc // Action 后钩子；Action 失败也执行
 }
 type Context struct {
     App     *App
     Command *Command // 根 Action 时为 nil
     Args    []string // 解析后的位置参数（未声明时原样透传）
     Flags   FlagValues
+    Global  FlagValues // 全局 flag 值
 }
 type ActionFunc func(ctx context.Context, c *Context) error
 type Option func(*appConfig)
@@ -66,11 +69,15 @@ func EnumFlag(name, usage string, allowed ...string) FlagSpec
 func StringSliceFlag(name, usage string) FlagSpec
 func (f FlagSpec) Required() FlagSpec
 func (f FlagSpec) Default(v any) FlagSpec
+func (f FlagSpec) Env(name string) FlagSpec
 ```
 
 默认值规则：字符串/枚举为 string，布尔为 bool，整数为 int/int64，
 浮点为 float64/int/int64，时长为 time.Duration，可重复 flag 为 []string；
 类型不匹配在注册期报错。枚举默认值必须在允许列表内。
+
+取值优先级：命令行 > 环境变量 > 默认值；可重复 flag 的环境变量值
+使用逗号分隔并去除空白。环境变量同样满足必填校验。
 
 ### Context 访问器
 
@@ -88,6 +95,33 @@ func (c *Context) Strings(name string) []string
 
 未声明或未指定的 flag 返回类型零值；`HasFlag` 仅对显式指定的 flag
 返回 true。
+
+### 全局 flag
+
+```go
+func WithGlobalFlags(flags ...FlagSpec) Option
+func (c *Context) HasGlobalFlag(name string) bool
+func (c *Context) GlobalString(name string) string
+func (c *Context) GlobalBool(name string) bool
+func (c *Context) GlobalInt(name string) int
+func (c *Context) GlobalInt64(name string) int64
+func (c *Context) GlobalFloat64(name string) float64
+func (c *Context) GlobalDuration(name string) time.Duration
+func (c *Context) GlobalEnum(name string) string
+func (c *Context) GlobalStrings(name string) []string
+```
+
+- 全局 flag 必须位于命令名之前连续出现；命令名之后出现同名 flag
+  视为该命令的本地 flag；
+- 全局 flag 支持全部类型、默认值、环境变量与必填校验；
+- 帮助文本展示"全局选项"区块。
+
+### 生命周期钩子
+
+- `Before` 在参数解析后、Action 前运行；返回错误则中止 Action 与 After；
+- `After` 在 Action 后运行，Action 失败时仍执行；
+- Action 与 After 同时失败时返回 errx 聚合错误（`errx.Join`）；
+- 钩子与 Action 的 panic 统一恢复为 `CLI_ACTION_PANIC`。
 
 ### 构造与注册
 

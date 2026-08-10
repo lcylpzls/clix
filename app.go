@@ -24,6 +24,7 @@ type App struct {
 	root        ActionFunc
 
 	rootRegistry *registry
+	globalFlags  []FlagSpec
 }
 
 // Option 修改 App 构造配置。
@@ -37,6 +38,7 @@ type appConfig struct {
 	err         io.Writer
 	logger      logx.Logger
 	root        ActionFunc
+	globalFlags []FlagSpec
 }
 
 // WithDescription 设置应用描述，显示在帮助首行与命令列表中。
@@ -76,6 +78,14 @@ func WithRootAction(action ActionFunc) Option {
 	}
 }
 
+// WithGlobalFlags 声明应用级全局 flag。全局 flag 必须位于命令名之前，
+// 值通过 Context 的 Global* 访问器读取。
+func WithGlobalFlags(flags ...FlagSpec) Option {
+	return func(c *appConfig) {
+		c.globalFlags = append([]FlagSpec(nil), flags...)
+	}
+}
+
 // New 构造 App。name 与 version 必须非空；配置非法时返回 errx 错误。
 func New(name, version string, opts ...Option) (*App, error) {
 	if strings.TrimSpace(name) == "" {
@@ -96,6 +106,9 @@ func New(name, version string, opts ...Option) (*App, error) {
 	if cfg.err == nil {
 		return nil, errx.NewCode(CodeInvalidApp, "错误输出流不能为空")
 	}
+	if err := validateFlagSpecs(cfg.globalFlags); err != nil {
+		return nil, err
+	}
 	return &App{
 		name:         strings.TrimSpace(name),
 		version:      strings.TrimSpace(version),
@@ -106,6 +119,7 @@ func New(name, version string, opts ...Option) (*App, error) {
 		logger:       cfg.logger,
 		root:         cfg.root,
 		rootRegistry: &registry{},
+		globalFlags:  cfg.globalFlags,
 	}, nil
 }
 

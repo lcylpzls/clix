@@ -2,6 +2,7 @@ package clix
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -47,6 +48,7 @@ type FlagSpec struct {
 
 	required   bool
 	defaultVal any
+	env        string
 	kind       ValueKind
 }
 
@@ -104,6 +106,13 @@ func (f FlagSpec) Required() FlagSpec {
 // Default 设置 flag 默认值；类型必须与 flag 类型匹配。
 func (f FlagSpec) Default(v any) FlagSpec {
 	f.defaultVal = v
+	return f
+}
+
+// Env 绑定环境变量：命令行未显式指定时按 环境变量 > 默认值 取值。
+// 可重复 flag 的环境变量值使用逗号分隔。
+func (f FlagSpec) Env(name string) FlagSpec {
+	f.env = name
 	return f
 }
 
@@ -223,6 +232,9 @@ func validateFlagSpecs(flags []FlagSpec) error {
 		if f.kind == KindEnum && len(f.Allowed) == 0 {
 			return errx.NewCodef(CodeInvalidFlagDef, "枚举 flag %q 必须提供允许值", name)
 		}
+		if f.env != "" && !validEnvName(f.env) {
+			return errx.NewCodef(CodeInvalidFlagDef, "flag %q 的环境变量名 %q 非法", name, f.env)
+		}
 		if f.defaultVal != nil {
 			if err := checkDefaultValue(name, f.kind, f.defaultVal); err != nil {
 				return err
@@ -233,6 +245,23 @@ func validateFlagSpecs(flags []FlagSpec) error {
 		}
 	}
 	return nil
+}
+
+// validEnvName 校验环境变量名：以字母或下划线开头，仅含字母、数字、下划线。
+func validEnvName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for i, r := range name {
+		ok := (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || r == '_'
+		if !ok && i > 0 {
+			ok = r >= '0' && r <= '9'
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
 
 // validateArgSpecs 校验位置参数定义集合。
@@ -396,6 +425,9 @@ func parseCommandArgs(args []ArgSpec, flags []FlagSpec, raw []string) ([]string,
 		positional = append(positional, tok)
 	}
 
+	if err := applyEnvValues(flags, values); err != nil {
+		return nil, FlagValues{}, err
+	}
 	for _, f := range flags {
 		if f.required && !values[f.Name].present {
 			return nil, FlagValues{}, errx.NewCodef(CodeMissingRequiredFlag, "缺少必填 flag %q", f.Name)
@@ -408,6 +440,47 @@ func parseCommandArgs(args []ArgSpec, flags []FlagSpec, raw []string) ([]string,
 		}
 	}
 	return positional, FlagValues{values: values}, nil
+}
+
+// applyEnvValues 为未显式指定的 flag 应用环境变量值（环境变量 > 默认值）。
+func applyEnvValues(flags []FlagSpec, values map[string]flagValue) error {
+	for i := range flags {
+		f := &flags[i]
+		if f.env == "" || values[f.Name].present {
+			continue
+		}
+		raw, ok := os.LookupEnv(f.env)
+		if !ok {
+			continue
+		}
+		v := values[f.Name]
+		switch f.kind {
+		case KindBool:
+			b, err := strconv.ParseBool(raw)
+			if err != nil {
+				return errx.NewCodef(CodeInvalidFlagValue,
+					"环境变量 %s 需要布尔值，得到 %q", f.env, raw)
+			}
+			v = flagValue{kind: KindBool, present: true, b: b}
+		case KindStringSlice:
+			v = flagValue{kind: KindStringSlice, present: true}
+			for _, part := range strings.Split(raw, ",") {
+				part = strings.TrimSpace(part)
+				if part != "" {
+					v.strs = append(v.strs, part)
+				}
+			}
+		default:
+			parsed, err := parseScalar(f.Name, f.kind, raw, f.Allowed)
+			if err != nil {
+				return err
+			}
+			parsed.present = true
+			v = parsed
+		}
+		values[f.Name] = v
+	}
+	return nil
 }
 
 // applyDefault 将默认值写入 flag 存储。

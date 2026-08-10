@@ -1,5 +1,23 @@
 # 更新日志
 
+## [v0.4.0] - 2026-08-10
+
+### 新增
+
+- flag 环境变量绑定：`FlagSpec.Env`，取值优先级
+  命令行 > 环境变量 > 默认值；可重复 flag 使用逗号分隔；
+- 全局 flag：`WithGlobalFlags`，位于命令名之前，`Context.Global*`
+  访问器读取；帮助文本新增"全局选项"区块；
+- 生命周期钩子：`Command.Before` / `Command.After`：
+  - Before 失败则中止 Action 与 After；
+  - After 在 Action 失败后仍执行；
+  - 两者同时失败时合并为 errx 聚合错误；
+- 全局 flag 支持环境变量与必填校验，未知/非法统一为用法错误码。
+
+### 质量
+
+- 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v0.3.0] - 2026-08-10
 
 ### 新增

@@ -25,6 +25,7 @@ func newApp(out, errOut io.Writer) (*clix.App, error) {
 	app, err := clix.New("greet", "0.1.0",
 		clix.WithDescription("问候示例 CLI"),
 		clix.WithIO(out, errOut),
+		clix.WithGlobalFlags(clix.BoolFlag("verbose", "详细输出").Env("GREET_VERBOSE")),
 	)
 	if err != nil {
 		return nil, err
@@ -33,6 +34,9 @@ func newApp(out, errOut io.Writer) (*clix.App, error) {
 		Name:        "hello",
 		Description: "向指定名称问好",
 		Action: func(ctx context.Context, c *clix.Context) error {
+			if c.GlobalBool("verbose") {
+				fmt.Fprintln(c.Out(), "详细模式")
+			}
 			name := strings.Join(c.Args, " ")
 			if name == "" {
 				name = "世界"

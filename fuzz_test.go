@@ -28,6 +28,7 @@ func FuzzExecute(f *testing.F) {
 		app, err := New("fuzz", "0.1.0",
 			WithIO(&bytes.Buffer{}, &bytes.Buffer{}),
 			WithRootAction(func(ctx context.Context, c *Context) error { return nil }),
+			WithGlobalFlags(BoolFlag("verbose", "详细输出")),
 		)
 		if err != nil {
 			t.Fatalf("构造失败：%v", err)
@@ -42,6 +43,12 @@ func FuzzExecute(f *testing.F) {
 		parent := &Command{Name: "parent"}
 		_ = parent.AddCommand(&Command{Name: "child", Action: okAction})
 		_ = app.AddCommand(parent)
+		app.AddCommand(&Command{
+			Name:   "hook",
+			Before: func(ctx context.Context, c *Context) error { return nil },
+			Action: okAction,
+			After:  func(ctx context.Context, c *Context) error { return nil },
+		})
 		app.Execute(context.Background(), strings.Fields(input))
 	})
 }

@@ -35,6 +35,11 @@ type Command struct {
 	Group string
 	// Action 执行函数；与子命令至少提供一个。
 	Action ActionFunc
+	// Before 执行函数之前运行；返回错误时中止 Action 与 After。
+	Before ActionFunc
+	// After 执行函数之后运行（Action 失败也会运行）；
+	// 与 Action 同时失败时合并为 errx 聚合错误。
+	After ActionFunc
 
 	parent     *Command
 	children   registry
@@ -51,6 +56,8 @@ type Context struct {
 	Args []string
 	// Flags 是解析后的 flag 值；未声明 flag 或未解析时为空。
 	Flags FlagValues
+	// Global 是解析后的全局 flag 值。
+	Global FlagValues
 }
 
 // Out 返回应用注入的标准输出流。
