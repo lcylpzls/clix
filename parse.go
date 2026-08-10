@@ -268,8 +268,7 @@ func validateFlagSpecs(flags []FlagSpec) error {
 
 // validateDefaultAgainstRules 在注册期校验默认值是否满足 validx 规则。
 func validateDefaultAgainstRules(f FlagSpec) error {
-	validator, _ := validx.New()
-	if err := validator.ValidateField(f.defaultVal, f.validate); err != nil {
+	if err := validx.ValidateField(f.defaultVal, f.validate); err != nil {
 		return errx.WrapCodef(err, CodeInvalidFlagDef,
 			"flag %q 的默认值未通过校验规则", f.Name)
 	}
@@ -278,9 +277,8 @@ func validateDefaultAgainstRules(f FlagSpec) error {
 
 // checkValidationRules 在注册期预编译 validx 规则串，语法非法时返回错误。
 func checkValidationRules(kind ValueKind, rules string) error {
-	// 无选项时 validx.New 不会失败，注册期预编译仅校验规则语法。
-	validator, _ := validx.New()
-	if err := validator.ValidateField(zeroValueForKind(kind), rules); err != nil {
+	// 注册期预编译仅校验规则语法。
+	if err := validx.ValidateField(zeroValueForKind(kind), rules); err != nil {
 		if errx.Is(err, validx.CodeInvalidRule) {
 			return errx.WrapCode(err, CodeInvalidFlagDef, "flag 校验规则非法")
 		}

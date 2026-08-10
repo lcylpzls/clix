@@ -1,5 +1,16 @@
 # 更新日志
 
+## [v1.4.0] - 2026-08-10
+
+### 变更
+
+- flag 值校验统一改用 validx 包级默认校验器（`validx.ValidateField`），与全局规则表同实例；
+- flag/arg 定义集合的规格检查属于 CLI 定义解析器，保留在 parse.go；validx 依赖升级 v1.2.2。
+
+### 质量
+
+- 全部库包语句覆盖率保持 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v1.3.0] - 2026-08-10
 
 ### 新增
