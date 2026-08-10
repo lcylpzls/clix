@@ -95,3 +95,31 @@ func TestGreetCLISumUsageError(t *testing.T) {
 		t.Fatalf("错误输出缺失：%s", errBuf.String())
 	}
 }
+
+func TestGreetCLINestedRemote(t *testing.T) {
+	var out bytes.Buffer
+	app, err := newApp(&out, &bytes.Buffer{})
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"remote", "ls"}); code != clix.ExitOK {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitOK, code)
+	}
+	if !strings.Contains(out.String(), "origin") {
+		t.Fatalf("子命令输出缺失：%s", out.String())
+	}
+}
+
+func TestGreetCLINestedRemoteMissingSubcommand(t *testing.T) {
+	var errBuf bytes.Buffer
+	app, err := newApp(&bytes.Buffer{}, &errBuf)
+	if err != nil {
+		t.Fatalf("构造失败：%v", err)
+	}
+	if code := app.Execute(context.Background(), []string{"remote"}); code != clix.ExitUsage {
+		t.Fatalf("期望退出码 %d，得到 %d", clix.ExitUsage, code)
+	}
+	if !strings.Contains(errBuf.String(), "需要子命令") {
+		t.Fatalf("错误输出缺失：%s", errBuf.String())
+	}
+}

@@ -17,6 +17,9 @@ func FuzzExecute(f *testing.F) {
 	f.Add("hello 小明 小红")
 	f.Add("sum 1 2")
 	f.Add("sum 1 2 --base 10")
+	f.Add("parent child")
+	f.Add("parent nope")
+	f.Add("help parent child")
 	f.Add("nope")
 	f.Add("help nope")
 	f.Add("-h")
@@ -36,6 +39,9 @@ func FuzzExecute(f *testing.F) {
 				return nil
 			},
 		})
+		parent := &Command{Name: "parent"}
+		_ = parent.AddCommand(&Command{Name: "child", Action: okAction})
+		_ = app.AddCommand(parent)
 		app.Execute(context.Background(), strings.Fields(input))
 	})
 }

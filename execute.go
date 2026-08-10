@@ -83,20 +83,63 @@ func (a *App) dispatch(ctx context.Context, args []string) (runResult, error) {
 		fmt.Fprintf(a.out, "%s %s\n", a.name, a.version)
 		return runResult{}, nil
 	}
-	cmd := a.lookup(args[0])
+	cmd, rest := a.resolve(args)
 	if cmd == nil {
 		return runResult{}, errx.NewCodef(CodeUnknownCommand, "未知命令 %q，请运行 --help 查看可用命令", args[0])
 	}
-	rest := args[1:]
 	if hasHelpRequest(rest) {
 		fmt.Fprintln(a.out, a.renderCommandHelp(cmd))
 		return runResult{command: cmd}, nil
+	}
+	if cmd.Action == nil {
+		if len(rest) == 0 {
+			return runResult{command: cmd}, errx.NewCodef(CodeMissingCommand,
+				"命令 %q 需要子命令，请运行 %s --help 查看可用子命令", cmd.FullName(), cmd.FullName())
+		}
+		return runResult{command: cmd}, errx.NewCodef(CodeUnknownCommand,
+			"未知子命令 %q（命令 %q 下），请运行 %s --help 查看可用子命令",
+			rest[0], cmd.FullName(), cmd.FullName())
 	}
 	positional, flags, err := parseCommandArgs(cmd.Args, cmd.Flags, rest)
 	if err != nil {
 		return runResult{command: cmd}, err
 	}
 	return a.invoke(ctx, cmd, &Context{App: a, Command: cmd, Args: positional, Flags: flags})
+}
+
+// resolve 沿命令树解析参数：逐个匹配子命令名/别名，直到首个非命令参数。
+// 返回最终命令与剩余参数；顶层未命中时返回 nil。
+func (a *App) resolve(args []string) (*Command, []string) {
+	cmd := a.lookup(args[0])
+	if cmd == nil {
+		return nil, args
+	}
+	rest := args[1:]
+	for len(rest) > 0 {
+		next := cmd.children.lookup(rest[0])
+		if next == nil {
+			break
+		}
+		cmd = next
+		rest = rest[1:]
+	}
+	return cmd, rest
+}
+
+// resolvePath 按完整路径解析命令（供 help 子命令使用）；
+// 任一段未知时返回 CodeUnknownCommand。
+func (a *App) resolvePath(parts []string) (*Command, error) {
+	cur := a.rootRegistry
+	var cmd *Command
+	for i, part := range parts {
+		next := cur.lookup(part)
+		if next == nil {
+			return nil, errx.NewCodef(CodeUnknownCommand, "未知命令 %q，请运行 --help 查看可用命令", parts[i])
+		}
+		cmd = next
+		cur = &next.children
+	}
+	return cmd, nil
 }
 
 // invoke 执行根 Action 或子命令 Action，并恢复未捕获异常。
@@ -135,11 +178,11 @@ func (a *App) printHelp(args []string) error {
 		fmt.Fprintln(a.out, a.HelpText())
 		return nil
 	}
-	text, err := a.CommandHelpText(args[0])
+	cmd, err := a.resolvePath(args)
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(a.out, text)
+	fmt.Fprintln(a.out, a.renderCommandHelp(cmd))
 	return nil
 }
 
@@ -171,7 +214,7 @@ func (a *App) logError(msg string, start time.Time, res runResult, err error) {
 func (a *App) outcomeFields(start time.Time, res runResult, err error) logx.FieldGroup {
 	name := "（根命令）"
 	if res.command != nil {
-		name = res.command.Name
+		name = res.command.FullName()
 	}
 	groups := []logx.FieldGroup{
 		logx.Fields(

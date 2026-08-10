@@ -71,5 +71,24 @@ func newApp(out, errOut io.Writer) (*clix.App, error) {
 	}); err != nil {
 		return nil, err
 	}
+	remote := &clix.Command{
+		Name:        "remote",
+		Description: "远端仓库管理",
+		Group:       "工具",
+	}
+	if err := remote.AddCommand(&clix.Command{
+		Name:        "list",
+		Description: "列出远端仓库",
+		Aliases:     []string{"ls"},
+		Action: func(ctx context.Context, c *clix.Context) error {
+			fmt.Fprintln(c.Out(), "origin")
+			return nil
+		},
+	}); err != nil {
+		return nil, err
+	}
+	if err := app.AddCommand(remote); err != nil {
+		return nil, err
+	}
 	return app, nil
 }

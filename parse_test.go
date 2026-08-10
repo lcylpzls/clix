@@ -273,6 +273,9 @@ func TestValidFlagName(t *testing.T) {
 	if validFlagName("") {
 		t.Fatal("空名应非法")
 	}
+	if validFlagName("-x") {
+		t.Fatal("短横线开头应非法")
+	}
 	if !validFlagName("a-1_b") {
 		t.Fatal("合法名应通过")
 	}

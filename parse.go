@@ -263,9 +263,10 @@ func validFlagName(name string) bool {
 		return false
 	}
 	for i, r := range name {
-		ok := r == '_' || r == '-' ||
-			(r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') ||
-			(i > 0 && r >= '0' && r <= '9')
+		ok := (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+		if !ok && i > 0 {
+			ok = r == '_' || r == '-' || (r >= '0' && r <= '9')
+		}
 		if !ok {
 			return false
 		}

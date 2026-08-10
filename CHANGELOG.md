@@ -1,5 +1,23 @@
 # 更新日志
 
+## [v0.3.0] - 2026-08-10
+
+### 新增
+
+- 子命令树：`Command.AddCommand` 任意深度嵌套，`Parent` / `FullName`
+  访问器，`help parent child` 完整路径帮助；
+- 命令别名：顶层与子命令均支持，帮助列表展示别名，分发按别名命中；
+- 帮助分组：`Command.Group` 分组渲染（空分组无标题，组内保持注册顺序）；
+- 命令可同时拥有 Action 与子命令：无子命令参数时执行 Action，
+  命中子命令时执行子命令；
+- 无 Action 命令的缺少/未知子命令归一为 `CLI_MISSING_COMMAND` /
+  `CLI_UNKNOWN_COMMAND`（退出码 2）；
+- 命令帮助新增别名、子命令区块；命令名校验收紧为合法 ASCII 名称。
+
+### 质量
+
+- 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v0.2.0] - 2026-08-10
 
 ### 新增

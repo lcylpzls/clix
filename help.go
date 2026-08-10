@@ -18,20 +18,7 @@ func (a *App) HelpText() string {
 	b.WriteString("用法:\n")
 	fmt.Fprintf(&b, "  %s\n\n", a.usageLine())
 	b.WriteString("命令:\n")
-	commands := a.commandList()
-	if len(commands) == 0 {
-		b.WriteString("  （无）\n")
-	} else {
-		width := 0
-		for _, c := range commands {
-			if len(c.Name) > width {
-				width = len(c.Name)
-			}
-		}
-		for _, c := range commands {
-			fmt.Fprintf(&b, "  %-*s  %s\n", width, c.Name, c.Description)
-		}
-	}
+	b.WriteString(renderCommandList(a.commandList()))
 	b.WriteString("\n选项:\n")
 	b.WriteString("  -h, --help     显示帮助\n")
 	b.WriteString("      --version  显示版本\n")
@@ -52,11 +39,18 @@ func (a *App) renderCommandHelp(cmd *Command) string {
 	var b strings.Builder
 	usage := strings.TrimSpace(cmd.Usage)
 	if usage == "" {
-		usage = fmt.Sprintf("%s %s [选项...] [参数...]", a.name, cmd.Name)
+		usage = fmt.Sprintf("%s %s [选项...] [参数...]", a.name, cmd.FullName())
 	}
 	fmt.Fprintf(&b, "用法:\n  %s\n", usage)
 	if cmd.Description != "" {
 		fmt.Fprintf(&b, "\n描述:\n  %s\n", cmd.Description)
+	}
+	if len(cmd.Aliases) > 0 {
+		fmt.Fprintf(&b, "\n别名:\n  %s\n", strings.Join(cmd.Aliases, "、"))
+	}
+	if children := cmd.children.list(); len(children) > 0 {
+		b.WriteString("\n子命令:\n")
+		b.WriteString(renderCommandList(children))
 	}
 	if len(cmd.Args) > 0 {
 		b.WriteString("\n参数:\n")
@@ -89,6 +83,55 @@ func (a *App) renderCommandHelp(cmd *Command) string {
 		b.WriteString("  " + padRight("-h, --help", width) + "  显示帮助\n")
 	}
 	return b.String()
+}
+
+// renderCommandList 渲染命令列表：按 Group 分组（空分组无标题），
+// 组内保持注册顺序；命令名后展示别名。
+func renderCommandList(cmds []*Command) string {
+	if len(cmds) == 0 {
+		return "  （无）\n"
+	}
+	type group struct {
+		name  string
+		items []*Command
+	}
+	var groups []*group
+	index := make(map[string]*group)
+	for _, c := range cmds {
+		g, ok := index[c.Group]
+		if !ok {
+			g = &group{name: c.Group}
+			index[c.Group] = g
+			groups = append(groups, g)
+		}
+		g.items = append(g.items, c)
+	}
+	width := 0
+	for _, g := range groups {
+		for _, c := range g.items {
+			if l := len(commandDisplay(c)); l > width {
+				width = l
+			}
+		}
+	}
+	var b strings.Builder
+	for _, g := range groups {
+		if g.name != "" {
+			fmt.Fprintf(&b, "  %s:\n", g.name)
+		}
+		for _, c := range g.items {
+			fmt.Fprintf(&b, "    %-*s  %s\n", width, commandDisplay(c), c.Description)
+		}
+	}
+	return b.String()
+}
+
+// commandDisplay 返回命令显示名（含别名后缀）。
+func commandDisplay(c *Command) string {
+	if len(c.Aliases) == 0 {
+		return c.Name
+	}
+	return c.Name + "(" + strings.Join(c.Aliases, ",") + ")"
 }
 
 // flagDisplay 返回 flag 的显示行（--name 类型）。
