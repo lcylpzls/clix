@@ -1,5 +1,20 @@
 # 更新日志
 
+## [v1.3.0] - 2026-08-10
+
+### 新增
+
+- `Observer` 命令生命周期观察者（零依赖可选接口）：
+  `OnCommandStart` / `OnCommandFinish`（含命令名、参数、错误与耗时，
+  panic 恢复后同样触发 finish）；
+- `WithObserver` 选项注入，供 eventx / tracex / metricsx 等
+  外部适配器接入；
+- 帮助/版本等非命令执行不触发观察者。
+
+### 质量
+
+- 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v1.2.1] - 2026-08-10
 
 ### 变更

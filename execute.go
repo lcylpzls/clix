@@ -176,6 +176,17 @@ func (a *App) invoke(ctx context.Context, cmd *Command, c *Context) (res runResu
 		action = cmd.Action
 	}
 	res = runResult{command: cmd, args: c.Args}
+	start := time.Now()
+	name := "（根命令）"
+	if cmd != nil {
+		name = cmd.FullName()
+	}
+	if a.observer != nil {
+		a.observer.OnCommandStart(ctx, name, c.Args)
+		defer func() {
+			a.observer.OnCommandFinish(ctx, name, c.Args, err, time.Since(start))
+		}()
+	}
 	defer func() {
 		if r := recover(); r != nil {
 			res = runResult{command: cmd, args: c.Args}

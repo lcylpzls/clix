@@ -4,6 +4,7 @@ coverage
 cover.html
 *.test
 *.prof
+*.exe
 
 # 构建产物
 bin/
