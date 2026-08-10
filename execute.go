@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lcylpzls/errx"
-	errxlogx "github.com/lcylpzls/errx/logx"
 	"github.com/lcylpzls/logx"
 )
 
@@ -276,7 +275,7 @@ func (a *App) outcomeFields(start time.Time, res runResult, err error) logx.Fiel
 		),
 	}
 	if err != nil {
-		groups = append(groups, errxlogx.Fields(err))
+		groups = append(groups, logx.FieldsFromError(err))
 	}
 	var fs []logx.Field
 	for _, g := range groups {
