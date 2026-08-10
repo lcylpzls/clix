@@ -1,5 +1,19 @@
 # 更新日志
 
+## [v1.1.0] - 2026-08-10
+
+### 变更
+
+- 家族依赖同步：`errx` v1.3.2 → v1.4.0、`logx` v1.0.1 → v1.1.0；
+  两处均为纯增量能力（errx 可选 MetricsHook、logx 外置 MetricSink），
+  不改变 clix 现有 API 与行为；
+- `confx` 保持锁定 `v0.3.3`、`validx` 保持 `v1.0.2` 不变；
+- 示例模块间接依赖同步升级。
+
+### 质量
+
+- 根包语句覆盖率 100%；race / vet / staticcheck / fuzz / govulncheck 全绿。
+
 ## [v1.0.0] - 2026-08-10
 
 ### 发布

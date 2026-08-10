@@ -5,10 +5,10 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/lcylpzls/confx v0.3.3 h1:RsOoz5Q9ecbx7Gy7n9+/XwGfK6yj5NVGln/PzJYtBS0=
 github.com/lcylpzls/confx v0.3.3/go.mod h1:bC/3U4+19qnnwaBq3Tari5Al+i8JNL5jl1HNmZGlD8M=
-github.com/lcylpzls/errx v1.3.2 h1:/c2CsM+qcvleULu/tCqTkMnEVn3HzHOJligAug2/syI=
-github.com/lcylpzls/errx v1.3.2/go.mod h1:+GcqVS4+6iuHvCELjwpsc1RKrdEtSNz00xq0lFrgdgI=
-github.com/lcylpzls/logx v1.0.1 h1:7cEh10SGO5s5pnTRwMew+poXCuDl2qE1Z5EzgFVZL/Q=
-github.com/lcylpzls/logx v1.0.1/go.mod h1:reR9kkXoO1rL8xqvvDvNAyyKsU4nqA/9WJlkeQDne4I=
+github.com/lcylpzls/errx v1.4.0 h1:CdlMZuf2F49PCyUkRROf11i1gHcAI38GTG+kxMAGQWI=
+github.com/lcylpzls/errx v1.4.0/go.mod h1:+GcqVS4+6iuHvCELjwpsc1RKrdEtSNz00xq0lFrgdgI=
+github.com/lcylpzls/logx v1.1.0 h1:BiIhkpCxTt6xehnRjDSNS3r9vHINUwV2nhQFSajAypE=
+github.com/lcylpzls/logx v1.1.0/go.mod h1:reR9kkXoO1rL8xqvvDvNAyyKsU4nqA/9WJlkeQDne4I=
 github.com/lcylpzls/validx v1.0.2 h1:gD+QaG6TPZzTLLJbR+a8enbJYaDECUAmJf/clDYJO2Y=
 github.com/lcylpzls/validx v1.0.2/go.mod h1:N8NACI104eUbxvP5SxYxG3k2rc+8MmjotXpYpDNxrxE=
 github.com/magiconair/properties v1.18.11 h1:j5ozYZl0zCjG7ahMDH0GWIobOvvUzT0BdAguG0ViKy0=
