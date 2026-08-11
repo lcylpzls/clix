@@ -26,6 +26,8 @@ func TestValidateFlagSpecs(t *testing.T) {
 		{"布尔默认值类型错误", []FlagSpec{BoolFlag("b", "").Default("x")}},
 		{"整数默认值类型错误", []FlagSpec{IntFlag("i", "").Default("x")}},
 		{"64 位整数默认值类型错误", []FlagSpec{Int64Flag("i64", "").Default("x")}},
+		{"无符号整数默认值类型错误", []FlagSpec{Uint64Flag("u", "").Default("x")}},
+		{"无符号整数负默认值", []FlagSpec{Uint64Flag("u", "").Default(-1)}},
 		{"浮点默认值类型错误", []FlagSpec{FloatFlag("f", "").Default("x")}},
 		{"时长默认值类型错误", []FlagSpec{DurationFlag("d", "").Default("x")}},
 		{"切片默认值类型错误", []FlagSpec{StringSliceFlag("sl", "").Default("x")}},
@@ -167,6 +169,8 @@ func TestParseCommandArgsErrors(t *testing.T) {
 		{"布尔值非法", nil, []FlagSpec{BoolFlag("v", "")}, []string{"--v=maybe"}, CodeInvalidFlagValue},
 		{"整数非法", nil, []FlagSpec{IntFlag("i", "")}, []string{"--i", "x"}, CodeInvalidFlagValue},
 		{"64 位整数非法", nil, []FlagSpec{Int64Flag("i", "")}, []string{"--i", "x"}, CodeInvalidFlagValue},
+		{"无符号整数非法", nil, []FlagSpec{Uint64Flag("u", "")}, []string{"--u", "-1"}, CodeInvalidFlagValue},
+		{"无符号整数非数字", nil, []FlagSpec{Uint64Flag("u", "")}, []string{"--u", "x"}, CodeInvalidFlagValue},
 		{"浮点非法", nil, []FlagSpec{FloatFlag("f", "")}, []string{"--f", "x"}, CodeInvalidFlagValue},
 		{"时长非法", nil, []FlagSpec{DurationFlag("d", "")}, []string{"--d", "x"}, CodeInvalidFlagValue},
 		{"枚举非法", nil, []FlagSpec{EnumFlag("m", "", "fast")}, []string{"--m", "slow"}, CodeInvalidEnumValue},
@@ -192,6 +196,10 @@ func TestContextFlagAccessors(t *testing.T) {
 		IntFlag("i2", "").Default(5),
 		Int64Flag("i64", "").Default(8),
 		Int64Flag("i64b", "").Default(int64(9)),
+		Uint64Flag("u", "").Default(uint64(7)),
+		Uint64Flag("u2", "").Default(8),
+		Uint64Flag("u3", "").Default(int64(9)),
+		Uint64Flag("u4", "").Default(uint(8)),
 		FloatFlag("f", "").Default(int64(3)),
 		FloatFlag("f2", "").Default(3),
 		FloatFlag("f3", "").Default(1.5),
@@ -199,7 +207,7 @@ func TestContextFlagAccessors(t *testing.T) {
 		EnumFlag("e", "", "fast", "slow").Default("fast"),
 		StringSliceFlag("sl", "").Default([]string{"a"}),
 	}
-	_, fv, err := parseCommandArgs(nil, flags, []string{"--sl", "b", "--s=显式"})
+	_, fv, err := parseCommandArgs(nil, flags, []string{"--sl", "b", "--s=显式", "--u", "42"})
 	testx.RequireNoError(t, err)
 
 	ctx := &Context{Flags: fv}
@@ -227,6 +235,18 @@ func TestContextFlagAccessors(t *testing.T) {
 	if ctx.Int64("i64b") != 9 {
 		t.Fatalf("Int64(int64) 不匹配：%d", ctx.Int64("i64b"))
 	}
+	if ctx.Uint64("u") != 42 {
+		t.Fatalf("Uint64 显式值不匹配：%d", ctx.Uint64("u"))
+	}
+	if ctx.Uint64("u2") != 8 {
+		t.Fatalf("Uint64(int) 不匹配：%d", ctx.Uint64("u2"))
+	}
+	if ctx.Uint64("u3") != 9 {
+		t.Fatalf("Uint64(int64) 不匹配：%d", ctx.Uint64("u3"))
+	}
+	if ctx.Uint64("u4") != 8 {
+		t.Fatalf("Uint64(uint) 不匹配：%d", ctx.Uint64("u4"))
+	}
 	if ctx.Float64("f") != 3 {
 		t.Fatalf("Float64 不匹配：%v", ctx.Float64("f"))
 	}
@@ -250,6 +270,7 @@ func TestContextFlagAccessors(t *testing.T) {
 		ctx.Bool("undeclared") ||
 		ctx.Int("undeclared") != 0 ||
 		ctx.Int64("undeclared") != 0 ||
+		ctx.Uint64("undeclared") != 0 ||
 		ctx.Float64("undeclared") != 0 ||
 		ctx.Duration("undeclared") != 0 ||
 		ctx.Strings("undeclared") != nil {
@@ -257,6 +278,28 @@ func TestContextFlagAccessors(t *testing.T) {
 	}
 	if (&Context{}).HasFlag("x") {
 		t.Fatal("空 Context 不应命中任何 flag")
+	}
+}
+
+// TestUint64DefaultValues 覆盖无符号整数默认值类型分支。
+func TestUint64DefaultValues(t *testing.T) {
+	for _, def := range []any{uint64(1), uint(2), int(3), int64(4)} {
+		if err := validateFlagSpecs([]FlagSpec{Uint64Flag("u", "").Default(def)}); err != nil {
+			t.Fatalf("默认值 %v 应通过：%v", def, err)
+		}
+	}
+}
+
+// TestUint64ValidationPaths 覆盖 Uint64 规则预编译与值校验路径。
+func TestUint64ValidationPaths(t *testing.T) {
+	if err := validateFlagSpecs([]FlagSpec{Uint64Flag("u", "").Validate("min=0")}); err != nil {
+		t.Fatalf("规则预编译失败：%v", err)
+	}
+	_, fv, err := parseCommandArgs(nil, []FlagSpec{Uint64Flag("u", "").Validate("min=0")},
+		[]string{"--u", "5"})
+	testx.RequireNoError(t, err)
+	if ctx := (&Context{Flags: fv}); ctx.Uint64("u") != 5 {
+		t.Fatalf("Uint64 校验后值不匹配：%d", ctx.Uint64("u"))
 	}
 }
 

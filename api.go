@@ -35,6 +35,7 @@ const (
 	KindBool        = core.KindBool
 	KindInt         = core.KindInt
 	KindInt64       = core.KindInt64
+	KindUint64      = core.KindUint64
 	KindFloat64     = core.KindFloat64
 	KindDuration    = core.KindDuration
 	KindEnum        = core.KindEnum

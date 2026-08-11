@@ -141,6 +141,8 @@ func valuesForValidation(v flagValue) []any {
 		return []any{v.i}
 	case KindInt64:
 		return []any{v.i64}
+	case KindUint64:
+		return []any{v.u64}
 	case KindFloat64:
 		return []any{v.f}
 	case KindDuration:
@@ -212,6 +214,17 @@ func applyDefault(v *flagValue, f *FlagSpec) {
 		case int64:
 			v.i64 = dv
 		}
+	case KindUint64:
+		switch dv := f.defaultVal.(type) {
+		case uint64:
+			v.u64 = dv
+		case uint:
+			v.u64 = uint64(dv)
+		case int:
+			v.u64 = uint64(dv)
+		case int64:
+			v.u64 = uint64(dv)
+		}
 	case KindFloat64:
 		switch dv := f.defaultVal.(type) {
 		case float64:
@@ -246,6 +259,12 @@ func parseScalar(name string, kind ValueKind, val string, allowed []string) (fla
 			return out, errx.NewCodef(CodeInvalidFlagValue, "flag %q 需要 64 位整数，得到 %q", name, val)
 		}
 		out.kind, out.i64 = KindInt64, n
+	case KindUint64:
+		n, err := strconv.ParseUint(val, 10, 64)
+		if err != nil {
+			return out, errx.NewCodef(CodeInvalidFlagValue, "flag %q 需要无符号 64 位整数，得到 %q", name, val)
+		}
+		out.kind, out.u64 = KindUint64, n
 	case KindFloat64:
 		n, err := strconv.ParseFloat(val, 64)
 		if err != nil {

@@ -64,6 +64,7 @@ func TestPublicAPI(t *testing.T) {
 	_ = clix.KindBool
 	_ = clix.KindInt
 	_ = clix.KindInt64
+	_ = clix.KindUint64
 	_ = clix.KindFloat64
 	_ = clix.KindDuration
 	_ = clix.KindEnum

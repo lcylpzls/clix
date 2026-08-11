@@ -47,8 +47,8 @@ func main() {
 
 - **命令分发**：根 Action + 任意深度子命令树，别名与分组，
   `-h/--help/help [路径]/--version` 内置约定；
-- **类型化参数解析**：位置参数（必填/变参）+ 八种 flag 类型
-  （string / bool / int / int64 / float / duration / enum / string[]），
+- **类型化参数解析**：位置参数（必填/变参）+ 九种 flag 类型
+  （string / bool / int / int64 / uint64 / float / duration / enum / string[]），
   支持必填、默认值、枚举校验与 `--` 终止符；
 - **环境变量与全局 flag**：flag 可绑定环境变量（命令行 > 环境变量 >
   默认值），应用级全局 flag 位于命令之前，`Context.Global*` 读取；

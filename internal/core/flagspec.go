@@ -18,6 +18,7 @@ const (
 	KindBool
 	KindInt
 	KindInt64
+	KindUint64
 	KindFloat64
 	KindDuration
 	KindEnum
@@ -70,6 +71,11 @@ func IntFlag(name, usage string) FlagSpec {
 // Int64Flag 构造 64 位整数 flag。
 func Int64Flag(name, usage string) FlagSpec {
 	return FlagSpec{Name: name, Usage: usage, kind: KindInt64}
+}
+
+// Uint64Flag 构造 64 位无符号整数 flag。
+func Uint64Flag(name, usage string) FlagSpec {
+	return FlagSpec{Name: name, Usage: usage, kind: KindUint64}
 }
 
 // FloatFlag 构造浮点数 flag。
@@ -136,6 +142,7 @@ type flagValue struct {
 	b       bool
 	i       int
 	i64     int64
+	u64     uint64
 	f       float64
 	dur     time.Duration
 	strs    []string
@@ -184,6 +191,15 @@ func (c *Context) Int64(name string) int64 {
 		return 0
 	}
 	return v.i64
+}
+
+// Uint64 返回 64 位无符号整数 flag 的值；未指定或未声明时返回 0。
+func (c *Context) Uint64(name string) uint64 {
+	v, ok := c.Flags.values[name]
+	if !ok {
+		return 0
+	}
+	return v.u64
 }
 
 // Float64 返回浮点 flag 的值；未指定或未声明时返回 0。
@@ -295,6 +311,8 @@ func zeroValueForKind(kind ValueKind) any {
 		return 0
 	case KindInt64:
 		return int64(0)
+	case KindUint64:
+		return uint64(0)
 	case KindFloat64:
 		return float64(0)
 	case KindDuration:
@@ -374,6 +392,15 @@ func checkDefaultValue(name string, kind ValueKind, v any) error {
 		_, ok = v.(int)
 		if !ok {
 			_, ok = v.(int64)
+		}
+	case KindUint64:
+		switch dv := v.(type) {
+		case uint64, uint:
+			ok = true
+		case int:
+			ok = dv >= 0
+		case int64:
+			ok = dv >= 0
 		}
 	case KindFloat64:
 		_, ok = v.(float64)

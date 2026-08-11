@@ -162,6 +162,8 @@ func flagTypeName(kind ValueKind) string {
 		return "int"
 	case KindInt64:
 		return "int64"
+	case KindUint64:
+		return "uint64"
 	case KindFloat64:
 		return "float"
 	case KindDuration:
