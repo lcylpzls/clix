@@ -1,4 +1,4 @@
-package clix
+package core
 
 import (
 	"strconv"
