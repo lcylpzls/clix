@@ -1,7 +1,7 @@
 # 错误码手册
 
 > clix 全部错误使用 errx 结构化错误码；错误码说明经 `errx.Describe`
-> 可查，日志经 `errx/logx.Fields` 输出。
+> 可查，日志经 `logx.FieldsFromError` 输出。
 
 ## 退出码约定
 

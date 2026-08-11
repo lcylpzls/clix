@@ -63,13 +63,8 @@ func main() {
 
 ## 文档
 
-- [docs/research.md](docs/research.md) — 竞品调研与取舍
-- [docs/design.md](docs/design.md) — 设计
 - [docs/architecture.md](docs/architecture.md) — 架构
-- [docs/api.md](docs/api.md) — API 快照
 - [docs/errors.md](docs/errors.md) — 错误码手册
-- [docs/final-review.md](docs/final-review.md) — 1.0 候选终审
-- [docs/roadmap.md](docs/roadmap.md) — 路线图
 
 ## License
 
