@@ -31,6 +31,7 @@ func TestPublicAPI(t *testing.T) {
 			clix.BoolFlag("upper", "大写"),
 			clix.IntFlag("n", "次数"),
 			clix.Int64Flag("i64", "64 位"),
+			clix.Uint64Flag("u64", "64 位无符号"),
 			clix.FloatFlag("f", "浮点"),
 			clix.DurationFlag("d", "时长"),
 			clix.EnumFlag("mode", "模式", "a", "b"),
@@ -96,4 +97,37 @@ func TestPublicAPI(t *testing.T) {
 	var _ clix.App
 	var _ clix.Command
 	var _ clix.Context
+}
+
+// TestUint64FlagExternal 覆盖外部包端到端使用 Uint64Flag。
+func TestUint64FlagExternal(t *testing.T) {
+	var got uint64
+	app, err := clix.New("u64", "1.0.0", clix.WithIO(io.Discard, io.Discard))
+	if err != nil {
+		t.Fatalf("New 失败：%v", err)
+	}
+	cmd := &clix.Command{
+		Name: "hello",
+		Flags: []clix.FlagSpec{
+			clix.Uint64Flag("dc", "数据中心 ID"),
+		},
+		Action: func(_ context.Context, c *clix.Context) error {
+			got = c.Uint64("dc")
+			return nil
+		},
+	}
+	if err := app.AddCommand(cmd); err != nil {
+		t.Fatalf("AddCommand 失败：%v", err)
+	}
+
+	if code := app.Execute(context.Background(), []string{"hello", "--dc", "7"}); code != clix.ExitOK {
+		t.Fatalf("合法值退出码应为 OK：%d", code)
+	}
+	if got != 7 {
+		t.Fatalf("Uint64 值不匹配：%d", got)
+	}
+
+	if code := app.Execute(context.Background(), []string{"hello", "--dc", "-1"}); code != clix.ExitUsage {
+		t.Fatalf("负值应返回用法错误：%d", code)
+	}
 }

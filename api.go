@@ -77,6 +77,7 @@ func StringFlag(name, usage string) FlagSpec   { return core.StringFlag(name, us
 func BoolFlag(name, usage string) FlagSpec     { return core.BoolFlag(name, usage) }
 func IntFlag(name, usage string) FlagSpec      { return core.IntFlag(name, usage) }
 func Int64Flag(name, usage string) FlagSpec    { return core.Int64Flag(name, usage) }
+func Uint64Flag(name, usage string) FlagSpec   { return core.Uint64Flag(name, usage) }
 func FloatFlag(name, usage string) FlagSpec    { return core.FloatFlag(name, usage) }
 func DurationFlag(name, usage string) FlagSpec { return core.DurationFlag(name, usage) }
 func EnumFlag(name, usage string, allowed ...string) FlagSpec {
